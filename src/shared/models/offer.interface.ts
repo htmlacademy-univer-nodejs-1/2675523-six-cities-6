@@ -20,10 +20,10 @@ export interface OfferInterface {
   rating: number;
   type: HouseType;
   rooms: number;
-  quests: number;
   price: number;
   amenities: AmenitiesType[];
   author: UserInterface;
   commentsCount: number;
   coordinates: CoordinatesInterface;
+  guestsCount: number;
 }
