@@ -38,9 +38,7 @@ export class UserEntity extends defaultClasses.TimeStamps implements UserInterfa
   public type!: UserType;
 
   @prop({
-    required: true,
-    minlength: 6,
-    maxlength: 12
+    required: true
   })
   private _password?: string;
 

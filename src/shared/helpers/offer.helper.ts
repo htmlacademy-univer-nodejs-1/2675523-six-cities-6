@@ -19,6 +19,7 @@ export function createOffer(offerData: string): OfferInterface {
     ratingRaw,
     typeRaw,
     roomsRaw,
+    guestsCount,
     priceRaw,
     amenitiesRaw,
     authorName,
@@ -26,8 +27,7 @@ export function createOffer(offerData: string): OfferInterface {
     authorAvatar,
     authorTypeRaw,
     commentsCountRaw,
-    coordinatesRaw,
-    guestsCount
+    coordinatesRaw
   ] = offerData.replace('\n', '').split('\t');
 
   const houseType = findHouseType(typeRaw?.trim());
