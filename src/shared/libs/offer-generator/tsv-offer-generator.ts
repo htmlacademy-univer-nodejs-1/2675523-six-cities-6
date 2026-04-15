@@ -53,7 +53,6 @@ export class TSVOfferGenerator implements OfferGeneratorInterface {
     const authorName = getRandomItem(this.mockData.authorNames);
     const authorEmail = getRandomItem(this.mockData.authorEmails);
     const authorAvatar = getRandomItem(this.mockData.authorAvatars);
-    const authorPassword = getRandomItem(this.mockData.authorPasswords);
     const authorType = getRandomItem<UserType>(USER_TYPES);
     const commentsCount = generateRandomValue(MIN_COMMENTS_COUNT, MAX_COMMENTS_COUNT).toString();
     const coordinates = getRandomItem(this.mockData.coordinatesValues).join(';');
@@ -76,7 +75,6 @@ export class TSVOfferGenerator implements OfferGeneratorInterface {
       authorName,
       authorEmail,
       authorAvatar,
-      authorPassword,
       authorType,
       commentsCount,
       coordinates

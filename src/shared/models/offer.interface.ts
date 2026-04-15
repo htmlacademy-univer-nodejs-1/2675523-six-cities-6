@@ -1,5 +1,5 @@
 import { UserInterface } from './user.interface.js';
-import { CityInterface } from './city.interface.js';
+import { CityName } from './city.interface.js';
 import { HouseType } from './house.type.js';
 import { AmenitiesType } from './amentities.type.js';
 
@@ -12,7 +12,7 @@ export interface OfferInterface {
   title: string;
   description: string;
   publishDate: Date;
-  city: CityInterface;
+  city: CityName;
   previewImage: string;
   photos: string[];
   isPremium: boolean;

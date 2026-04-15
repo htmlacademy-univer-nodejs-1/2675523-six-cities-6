@@ -1,6 +1,7 @@
 import {
-  CityInterface, CoordinatesInterface,
+  CoordinatesInterface,
   findAmenityType,
+  findCityName,
   findHouseType,
   findUserType,
   OfferInterface, UserInterface
@@ -35,6 +36,11 @@ export function createOffer(offerData: string): OfferInterface {
     throw new Error(`Invalid HouseType: "${typeRaw}"`);
   }
 
+  const city = findCityName(cityName?.trim());
+  if (!city) {
+    throw new Error(`Invalid CityName: "${cityName}"`);
+  }
+
   const userType = findUserType(authorTypeRaw?.trim());
   if (!userType) {
     throw new Error(`Invalid UserType: "${authorTypeRaw}"`);
@@ -65,11 +71,7 @@ export function createOffer(offerData: string): OfferInterface {
     title: title?.trim(),
     description: description?.trim(),
     publishDate: new Date(publishDate),
-    city: {
-      name: cityName?.trim(),
-      latitude,
-      longitude,
-    } satisfies CityInterface,
+    city,
     previewImage: previewImage?.trim(),
     photos: photosRaw?.split(';').map((photo) => photo.trim()),
     isPremium: isPremiumRaw?.trim().toLowerCase() === 'true',

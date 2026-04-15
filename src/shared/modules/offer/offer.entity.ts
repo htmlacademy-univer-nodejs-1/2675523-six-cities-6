@@ -4,10 +4,11 @@ import { CoordinatesSchema } from './coordinates.schema.js';
 import {
   AmenitiesType,
   AMENITY_TYPES,
+  CITY_NAMES,
+  CityName,
   HOUSE_TYPES,
   HouseType
 } from '../../models/index.js';
-import {CitySchema} from './city.schema.js';
 
 export interface OfferEntity extends defaultClasses.Base {}
 
@@ -42,10 +43,10 @@ export class OfferEntity extends defaultClasses.TimeStamps {
 
   @prop({
     required: true,
-    _id: false,
-    type: () => CitySchema
+    type: () => String,
+    enum: CITY_NAMES
   })
-  public city!: CitySchema;
+  public city!: CityName;
 
   @prop({
     required: true,
