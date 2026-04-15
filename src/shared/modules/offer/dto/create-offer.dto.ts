@@ -7,13 +7,11 @@ import {
 export class CreateOfferDto {
   public title!: string;
   public description!: string;
-  public publishDate!: Date;
   public city!: CityName;
   public previewImage!: string;
   public housingImages!: string[];
   public isPremium!: boolean;
   public isFavorite!: boolean;
-  public rating!: number;
   public housingType!: HouseType;
   public roomsCount!: number;
   public guestsCount!: number;
