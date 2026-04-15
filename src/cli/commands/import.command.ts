@@ -87,13 +87,11 @@ export class ImportCommand implements CommandInterface {
     await this.offerService.create({
       title: offer.title,
       description: offer.description,
-      publishDate: offer.publishDate,
       city: offer.city,
       previewImage: offer.previewImage,
       housingImages: offer.photos,
       isPremium: offer.isPremium,
       isFavorite: offer.isFavorite,
-      rating: offer.rating,
       housingType: offer.type,
       roomsCount: offer.rooms,
       guestsCount: offer.guestsCount,

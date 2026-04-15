@@ -472,6 +472,7 @@ components:
         - previewImage
         - housingImages
         - isPremium
+        - isFavorite
         - housingType
         - roomsCount
         - guestsCount
@@ -508,6 +509,9 @@ components:
             - https://my-mock.com/housing-image-8.jpg
             - https://my-mock.com/housing-image-9.jpg
         isPremium:
+          type: boolean
+          example: false
+        isFavorite:
           type: boolean
           example: false
         housingType:

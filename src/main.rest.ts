@@ -4,13 +4,15 @@ import {createRestApplicationContainer, RestApplication} from './rest/index.js';
 import {Component} from './shared/index.js';
 import {createUserContainer} from './shared/modules/user/index.js';
 import {createOfferContainer} from './shared/modules/offer/index.js';
+import {createCommentContainer} from './shared/modules/comment/index.js';
 
 async function bootstrap(): Promise<void> {
   const appContainer = new Container();
   appContainer.load(
     createRestApplicationContainer(),
     createUserContainer(),
-    createOfferContainer()
+    createOfferContainer(),
+    createCommentContainer()
   );
 
   const application: RestApplication = appContainer.get<RestApplication>(Component.RestApplication);
