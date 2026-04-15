@@ -1,5 +1,5 @@
 import {
-  AmenitiesType, CityInterface,
+  AmenitiesType, CityName,
   CoordinatesInterface,
   HouseType
 } from '../../../models/index.js';
@@ -8,7 +8,7 @@ export class CreateOfferDto {
   public title!: string;
   public description!: string;
   public publishDate!: Date;
-  public city!: CityInterface;
+  public city!: CityName;
   public previewImage!: string;
   public housingImages!: string[];
   public isPremium!: boolean;
