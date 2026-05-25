@@ -19,10 +19,8 @@
     "experimentalDecorators": true,
     "sourceMap": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "emitDecoratorMetadata": true,
-    "types": [
-      "node",
-    ],
     "lib": [
       "ESNext"
     ]
@@ -35,6 +33,8 @@
     "**/*.test.ts"
   ],
   "ts-node": {
-    "esm": true
+    "esm": true,
+    "logError": true,
+    "pretty": true
   }
 }

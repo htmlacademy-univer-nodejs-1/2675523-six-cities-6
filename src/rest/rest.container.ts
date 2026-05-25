@@ -5,6 +5,10 @@ import { ConfigInterface, RestConfig, RestSchema } from '../shared/libs/config/i
 import { DatabaseClientInterface, MongoDatabaseClient } from '../shared/libs/database-client/index.js';
 import {LoggerInterface} from '../shared/libs/logger/models/index.js';
 import {Component} from '../shared/index.js';
+import {
+  DefaultExceptionFilter,
+  ExceptionFilterInterface
+} from '../shared/libs/rest/index.js';
 
 export function createRestApplicationContainer(): ContainerModule {
   return new ContainerModule(({ bind }) => {
@@ -22,6 +26,10 @@ export function createRestApplicationContainer(): ContainerModule {
 
     bind<DatabaseClientInterface>(Component.DatabaseClient)
       .to(MongoDatabaseClient)
+      .inSingletonScope();
+
+    bind<ExceptionFilterInterface>(Component.ExceptionFilter)
+      .to(DefaultExceptionFilter)
       .inSingletonScope();
   });
 }

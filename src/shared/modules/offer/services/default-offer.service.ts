@@ -1,18 +1,16 @@
 import { inject, injectable } from 'inversify';
-import { types } from '@typegoose/typegoose';
+import { DocumentType, types } from '@typegoose/typegoose';
 import { CreateOfferDto } from '../dto/create-offer.dto.js';
 import { OfferEntity } from '../offer.entity.js';
 import {Component} from '../../../models/index.js';
 import {LoggerInterface} from '../../../libs/logger/models/index.js';
-import {OfferServiceInterface} from '../models/offer-service.interface.js';
-import {OfferFullDtoType} from '../dto/offer-full-dto.type.js';
+import {OfferServiceInterface} from '../models/index.js';
 import {
   fullProjection,
   previewProjection,
   statsPipeline
 } from '../utils/offer.util.js';
 import {Types} from 'mongoose';
-import {OfferPreviewDtoType} from '../dto/offer-preview-dto.type.js';
 import {
   DEFAULT_OFFER_COUNT,
   PREMIUM_OFFER_COUNT
@@ -26,12 +24,12 @@ export class DefaultOfferService implements OfferServiceInterface {
     @inject(Component.OfferModel) private readonly _offerModel: types.ModelType<OfferEntity>
   ) {}
 
-  public async create(dto: CreateOfferDto): Promise<OfferFullDtoType> {
+  public async create(dto: CreateOfferDto): Promise<DocumentType<OfferEntity>> {
     const created = await this._offerModel.create(dto);
     this._logger.info(`New offer created: ${dto.title}`);
 
     const [offer] = await this._offerModel
-      .aggregate<OfferFullDtoType>([
+      .aggregate([
         { $match: { _id: created._id } },
         ...statsPipeline,
         fullProjection
@@ -41,9 +39,9 @@ export class DefaultOfferService implements OfferServiceInterface {
     return offer;
   }
 
-  public async findById(offerId: string): Promise<OfferFullDtoType | null> {
+  public async findById(offerId: string): Promise<DocumentType<OfferEntity> | null> {
     const [offer] = await this._offerModel
-      .aggregate<OfferFullDtoType>([
+      .aggregate([
         { $match: { _id: new Types.ObjectId(offerId) } },
         ...statsPipeline,
         fullProjection
@@ -52,11 +50,11 @@ export class DefaultOfferService implements OfferServiceInterface {
     return offer ?? null;
   }
 
-  public async find(count?: number): Promise<OfferPreviewDtoType[]> {
+  public async find(count?: number): Promise<Array<DocumentType<OfferEntity>>> {
     const limit = count ?? DEFAULT_OFFER_COUNT;
 
     return this._offerModel
-      .aggregate<OfferPreviewDtoType>([
+      .aggregate([
         ...statsPipeline,
         previewProjection,
         { $sort: { publishDate: -1 } },
@@ -65,7 +63,7 @@ export class DefaultOfferService implements OfferServiceInterface {
       .exec();
   }
 
-  public async updateById(offerId: string, dto: UpdateOfferDto): Promise<OfferFullDtoType | null> {
+  public async updateById(offerId: string, dto: UpdateOfferDto): Promise<DocumentType<OfferEntity> | null> {
     await this._offerModel.findByIdAndUpdate(offerId, dto).exec();
 
     return this.findById(offerId);
@@ -81,9 +79,9 @@ export class DefaultOfferService implements OfferServiceInterface {
     return (await this._offerModel.exists({ _id: documentId }) !== null);
   }
 
-  public async findPremium(city: string): Promise<OfferPreviewDtoType[]> {
+  public async findPremium(city: string): Promise<Array<DocumentType<OfferEntity>>> {
     return this._offerModel
-      .aggregate<OfferPreviewDtoType>([
+      .aggregate([
         { $match: { city, isPremium: true } },
         ...statsPipeline,
         previewProjection,
@@ -92,9 +90,9 @@ export class DefaultOfferService implements OfferServiceInterface {
       .exec();
   }
 
-  public async findFavorite(): Promise<OfferPreviewDtoType[]> {
+  public async findFavorite(): Promise<Array<DocumentType<OfferEntity>>> {
     return this._offerModel
-      .aggregate<OfferPreviewDtoType>([
+      .aggregate([
         { $match: { isFavorite: true } },
         ...statsPipeline,
         previewProjection
