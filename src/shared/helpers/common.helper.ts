@@ -1,3 +1,5 @@
+import {ClassConstructor, plainToInstance} from 'class-transformer';
+
 export function generateRandomValue(min: number, max: number, numAfterDigit = 0) {
   return +((Math.random() * (max - min)) + min).toFixed(numAfterDigit);
 }
@@ -20,4 +22,14 @@ export function getRandomItem<T>(items: readonly T[]): T {
 
 export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : '';
+}
+
+export function fillDTO<T, V>(dto: ClassConstructor<T>, plainObject: V): T {
+  return plainToInstance(dto, plainObject, { excludeExtraneousValues: true });
+}
+
+export function createErrorObject(message: string) {
+  return {
+    error: message
+  };
 }
