@@ -5,3 +5,4 @@ export * from './models/comment-service.interface.js';
 export * from './services/default-comment.service.js';
 export * from './constants/comment.constant.js';
 export * from './rdo/comment.rdo.js';
+export * from './dto/comment.messages.js';

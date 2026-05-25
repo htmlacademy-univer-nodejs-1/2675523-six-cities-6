@@ -9,3 +9,4 @@ export * from './offer.controller.js';
 export * from './rdo/offer-preview.rdo.js';
 export * from './rdo/offer.rdo.js';
 export * from './models/index.js';
+export * from './dto/offer.messages.js';

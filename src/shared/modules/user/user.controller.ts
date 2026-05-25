@@ -1,6 +1,9 @@
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
-import { BaseController, HttpError, HttpMethod, HttpRequest } from '../../libs/rest/index.js';
+import {
+  BaseController, HttpError, HttpMethod, HttpRequest,
+  ValidateDtoMiddleware
+} from '../../libs/rest/index.js';
 import { StatusCodes } from 'http-status-codes';
 import { ConfigInterface, RestSchema } from '../../libs/config/index.js';
 import { fillDTO } from '../../helpers/index.js';
@@ -21,10 +24,22 @@ export class UserController extends BaseController {
     super(logger);
 
     this.logger.info('Registering routes for UserController...');
-    this.addRoute({ path: '/register', method: HttpMethod.Post, handler: this.create });
-    this.addRoute({ path: '/auth/login', method: HttpMethod.Post, handler: this.login });
-    this.addRoute({ path: '/auth/logout', method: HttpMethod.Post, handler: this.logout });
-    this.addRoute({ path: '/auth/status', method: HttpMethod.Get, handler: this.getStatus });
+    this.addRoutes([
+      {
+        path: '/register',
+        method: HttpMethod.Post,
+        handler: this.create,
+        middlewares: [new ValidateDtoMiddleware(CreateUserDto)]
+      },
+      {
+        path: '/auth/login',
+        method: HttpMethod.Post,
+        handler: this.login,
+        middlewares: [new ValidateDtoMiddleware(LoginUserDto)]
+      },
+      { path: '/auth/logout', method: HttpMethod.Post, handler: this.logout },
+      { path: '/auth/status', method: HttpMethod.Get, handler: this.getStatus }
+    ]);
   }
 
   public async create(
