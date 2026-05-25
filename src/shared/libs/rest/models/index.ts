@@ -3,3 +3,5 @@ export * from './request-params.type.js';
 export * from './http-request.type.js';
 export * from './route.interface.js';
 export * from './http-method.enum.js';
+export * from './document-exists.interface.js';
+export * from './request-query.interface.js';

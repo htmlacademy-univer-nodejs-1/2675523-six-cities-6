@@ -1,4 +1,4 @@
-import { Expose } from 'class-transformer';
+import {Expose, Type} from 'class-transformer';
 import { OfferPreviewRdo } from './offer-preview.rdo.js';
 import { UserRdo } from '../../user/index.js';
 import {CoordinatesInterface} from '../../../models/index.js';
@@ -20,6 +20,7 @@ export class OfferRdo extends OfferPreviewRdo {
   public amenities!: string[];
 
   @Expose()
+  @Type(() => UserRdo)
   public author!: UserRdo;
 
   @Expose()

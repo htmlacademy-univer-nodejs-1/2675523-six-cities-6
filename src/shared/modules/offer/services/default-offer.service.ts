@@ -69,8 +69,8 @@ export class DefaultOfferService implements OfferServiceInterface {
     return this.findById(offerId);
   }
 
-  public async deleteById(offerId: string): Promise<void> {
-    await this._offerModel
+  public async deleteById(offerId: string): Promise<DocumentType<OfferEntity> | null> {
+    return await this._offerModel
       .findByIdAndDelete(offerId)
       .exec();
   }

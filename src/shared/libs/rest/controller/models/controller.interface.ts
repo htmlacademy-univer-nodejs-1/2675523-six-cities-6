@@ -3,7 +3,7 @@ import { RouteInterface} from '../../models/index.js';
 
 export interface ControllerInterface {
   readonly router: Router;
-  addRoute(route: RouteInterface): void;
+  addRoutes(routes: RouteInterface[]): void;
   send<T>(res: Response, statusCode: number, data: T): void;
   ok<T>(res: Response, data: T): void;
   created<T>(res: Response, data: T): void;
