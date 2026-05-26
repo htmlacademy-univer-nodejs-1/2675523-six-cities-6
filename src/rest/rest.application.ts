@@ -6,7 +6,7 @@ import {DatabaseClientInterface} from '../shared/libs/database-client/index.js';
 import express, { Express } from 'express';
 import {
   ControllerInterface,
-  ExceptionFilterInterface
+  ExceptionFilterInterface, ParseTokenMiddleware
 } from '../shared/libs/rest/index.js';
 
 @injectable()
@@ -20,6 +20,7 @@ export class RestApplication {
     @inject(Component.UserController) private readonly userController: ControllerInterface,
     @inject(Component.OfferController) private readonly offerController: ControllerInterface,
     @inject(Component.ExceptionFilter) private readonly appExceptionFilter: ExceptionFilterInterface,
+    @inject(Component.AuthExceptionFilter) private readonly authExceptionFilter: ExceptionFilterInterface,
   ) {
     this.server = express();
   }
@@ -60,11 +61,15 @@ export class RestApplication {
   }
 
   private async initMiddleware(): Promise<void> {
+    const authenticateMiddleware = new ParseTokenMiddleware(this._config.get('JWT_SECRET'));
+
     this.server.use(express.json());
     this.server.use(
       '/upload',
       express.static(this._config.get('UPLOAD_DIRECTORY'))
     );
+
+    this.server.use(authenticateMiddleware.execute.bind(authenticateMiddleware));
   }
 
   private async initControllers(): Promise<void> {
@@ -73,6 +78,7 @@ export class RestApplication {
   }
 
   private async initExceptionFilters(): Promise<void> {
+    this.server.use(this.authExceptionFilter.catch.bind(this.authExceptionFilter));
     this.server.use(this.appExceptionFilter.catch.bind(this.appExceptionFilter));
   }
 

@@ -75,6 +75,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/offer"
+        "400":
+          $ref: "#/components/responses/invalidIdError"
         "404":
           $ref: "#/components/responses/notFoundError"
     patch:
@@ -185,7 +187,9 @@ paths:
         - $ref: "#/components/parameters/offerId"
       responses:
         "201":
-          description: Предложение добавлено в избранное
+          description: Предложение добавлено в избранное,
+        "400":
+          $ref: "#/components/responses/invalidIdError"
         "401":
           $ref: "#/components/responses/unauthorizedError"
         '404':
@@ -202,6 +206,8 @@ paths:
       responses:
         "204":
           description: Предложение удалено из избранного
+        "400":
+          $ref: "#/components/responses/invalidIdError"
         "401":
           $ref: "#/components/responses/unauthorizedError"
         "404":
@@ -225,6 +231,8 @@ paths:
                 maxItems: 50
                 items:
                   $ref: "#/components/schemas/comment"
+        "400":
+          $ref: "#/components/responses/invalidIdError"
         "404":
           $ref: "#/components/responses/notFoundError"
     post:
@@ -279,6 +287,8 @@ paths:
                 $ref: "#/components/schemas/user"
         "400":
           $ref: "#/components/responses/validationError"
+        "403":
+          description: Регистрироваться могут только неавторизованные пользователи
         "409":
           description: Пользователь с таким адресом электронной почты уже зарегистрирован
 
@@ -311,25 +321,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/authToken"
-        "400":
-          description: Переданы некорректные учетные данные
+                $ref: "#/components/schemas/loggedUser"
         "401":
           description: Адрес электронной почты или пароль указаны неверно
-
-  /users/auth/logout:
-    post:
-      tags:
-        - users
-      summary: Выход из системы
-      description: Завершает текущую пользовательскую сессию
-      security:
-        - bearerAuth: []
-      responses:
-        "204":
-          description: Пользователь успешно вышел из системы
-        "401":
-          $ref: "#/components/responses/unauthorizedError"
+        "404":
+          description: Пользователь не найден
 
   /users/auth/status:
     get:
@@ -370,6 +366,8 @@ components:
       description: Пользователь не авторизован
     notFoundError:
       description: Запрашиваемый ресурс не найден
+    invalidIdError:
+      description: Ошибка, неверный формат id
 
   schemas:
     offerPreview:
@@ -472,7 +470,6 @@ components:
         - previewImage
         - housingImages
         - isPremium
-        - isFavorite
         - housingType
         - roomsCount
         - guestsCount
@@ -509,9 +506,6 @@ components:
             - https://my-mock.com/housing-image-8.jpg
             - https://my-mock.com/housing-image-9.jpg
         isPremium:
-          type: boolean
-          example: false
-        isFavorite:
           type: boolean
           example: false
         housingType:
@@ -563,6 +557,16 @@ components:
             - default
             - pro
           example: default
+
+    loggedUser:
+      type: object
+      description: Объект с токеном и email пользователя после авторизации
+      properties:
+        token:
+          type: string
+        email:
+          type: string
+          example: email@email.com
 
     createUser:
       type: object
@@ -683,10 +687,3 @@ components:
           minimum: -180
           maximum: 180
           example: 60.3582
-
-    authToken:
-      type: object
-      description: Токен доступа для авторизованных запросов
-      properties:
-        token:
-          type: string

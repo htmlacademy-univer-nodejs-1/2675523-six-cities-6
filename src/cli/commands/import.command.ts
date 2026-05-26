@@ -20,6 +20,7 @@ import {
   DEFAULT_DB_PORT,
   DEFAULT_USER_PASSWORD
 } from './constants/command.constant.js';
+import {FavoriteModel} from '../../shared/modules/favorite/index.js';
 
 export class ImportCommand implements CommandInterface {
   private readonly userService: UserServiceInterface;
@@ -34,7 +35,7 @@ export class ImportCommand implements CommandInterface {
 
     this.logger = new ConsoleLogger();
     this.userService = new DefaultUserService(this.logger, UserModel);
-    this.offerService = new DefaultOfferService(this.logger, OfferModel);
+    this.offerService = new DefaultOfferService(this.logger, OfferModel, FavoriteModel);
     this.databaseClient = new MongoDatabaseClient(this.logger);
   }
 
@@ -91,7 +92,6 @@ export class ImportCommand implements CommandInterface {
       previewImage: offer.previewImage,
       housingImages: offer.photos,
       isPremium: offer.isPremium,
-      isFavorite: offer.isFavorite,
       housingType: offer.type,
       roomsCount: offer.rooms,
       guestsCount: offer.guestsCount,

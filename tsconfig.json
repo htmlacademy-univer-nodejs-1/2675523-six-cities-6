@@ -36,5 +36,6 @@
     "esm": true,
     "logError": true,
     "pretty": true
-  }
+  },
+  "files": ["./custom.d.ts"]
 }
