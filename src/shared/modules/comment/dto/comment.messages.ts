@@ -7,8 +7,5 @@ export const CommentValidationMessage = {
     invalid: 'Rating must be a number',
     min: 'Rating must be at least 1',
     max: 'Rating must be at most 5',
-  },
-  authorId: {
-    invalid: 'Author ID must be a valid ObjectId',
-  },
+  }
 } as const;

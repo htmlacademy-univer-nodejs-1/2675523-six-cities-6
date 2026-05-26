@@ -21,9 +21,6 @@ export const OfferValidationMessage = {
   isPremium: {
     invalid: 'Premium status must be a boolean',
   },
-  isFavorite: {
-    invalid: 'Favorite status must be a boolean',
-  },
   housingType: {
     invalid: 'Housing type must be one of: apartment, house, room, hotel',
   },
@@ -45,8 +42,5 @@ export const OfferValidationMessage = {
   amenities: {
     isArray: 'Amenities must be an array',
     invalid: 'Each amenity must be one of: Breakfast, Air conditioning, Laptop friendly workspace, Baby seat, Washer, Towels, Fridge',
-  },
-  authorId: {
-    invalid: 'Author ID must be a valid ObjectId',
-  },
+  }
 } as const;

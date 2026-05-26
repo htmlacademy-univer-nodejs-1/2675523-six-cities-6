@@ -7,7 +7,7 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray, IsBoolean,
-  IsIn, IsInt, IsMongoId,
+  IsIn, IsInt,
   IsString,
   IsUrl,
   Length, Max, Min
@@ -46,9 +46,6 @@ export class CreateOfferDto {
   @IsBoolean({ message: OfferValidationMessage.isPremium.invalid })
   public isPremium!: boolean;
 
-  @IsBoolean({ message: OfferValidationMessage.isFavorite.invalid })
-  public isFavorite!: boolean;
-
   @IsIn(HOUSE_TYPES, { message: OfferValidationMessage.housingType.invalid })
   public housingType!: HouseType;
 
@@ -74,7 +71,6 @@ export class CreateOfferDto {
   })
   public amenities!: AmenitiesType[];
 
-  @IsMongoId({ message: OfferValidationMessage.authorId.invalid })
   public authorId!: string;
 
   @IsCoordinates()

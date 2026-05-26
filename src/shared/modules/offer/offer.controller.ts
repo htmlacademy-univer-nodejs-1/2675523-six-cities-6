@@ -1,7 +1,9 @@
 import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import {
-  BaseController, DocumentExistsMiddleware, HttpError, HttpMethod, HttpRequest,
+  BaseController, DocumentExistsMiddleware,
+  DocumentOwnerMiddleware, HttpError, HttpMethod, HttpRequest,
+  PrivateRouteMiddleware,
   RequestQueryInterface,
   ValidateDtoMiddleware, ValidateObjectIdMiddleware
 } from '../../libs/rest/index.js';
@@ -38,9 +40,19 @@ export class OfferController extends BaseController {
         path: '/',
         method: HttpMethod.Post,
         handler: this.create,
-        middlewares: [new ValidateDtoMiddleware(CreateOfferDto)]
+        middlewares: [
+          new PrivateRouteMiddleware(),
+          new ValidateDtoMiddleware(CreateOfferDto)
+        ]
       },
-      { path: '/favorite', method: HttpMethod.Get, handler: this.indexFavorite },
+      {
+        path: '/favorite',
+        method: HttpMethod.Get,
+        handler: this.indexFavorite,
+        middlewares: [
+          new PrivateRouteMiddleware()
+        ]
+      },
       { path: '/premium/:city', method: HttpMethod.Get, handler: this.indexPremium },
       {
         path: '/:offerId',
@@ -56,9 +68,11 @@ export class OfferController extends BaseController {
         method: HttpMethod.Patch,
         handler: this.update,
         middlewares: [
+          new PrivateRouteMiddleware(),
           new ValidateObjectIdMiddleware('offerId'),
           new ValidateDtoMiddleware(UpdateOfferDto),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
+          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
+          new DocumentOwnerMiddleware(this.offerService, 'Offer', 'offerId')
         ]
       },
       {
@@ -66,8 +80,10 @@ export class OfferController extends BaseController {
         method: HttpMethod.Delete,
         handler: this.delete,
         middlewares: [
+          new PrivateRouteMiddleware(),
           new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
+          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
+          new DocumentOwnerMiddleware(this.offerService, 'Offer', 'offerId')
         ]
       },
       {
@@ -75,6 +91,7 @@ export class OfferController extends BaseController {
         method: HttpMethod.Post,
         handler: this.makeFavorite,
         middlewares: [
+          new PrivateRouteMiddleware(),
           new ValidateObjectIdMiddleware('offerId'),
           new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
         ]
@@ -84,6 +101,7 @@ export class OfferController extends BaseController {
         method: HttpMethod.Delete,
         handler: this.removeFavorite,
         middlewares: [
+          new PrivateRouteMiddleware(),
           new ValidateObjectIdMiddleware('offerId'),
           new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
         ]
@@ -102,6 +120,7 @@ export class OfferController extends BaseController {
         method: HttpMethod.Post,
         handler: this.createComment,
         middlewares: [
+          new PrivateRouteMiddleware(),
           new ValidateObjectIdMiddleware('offerId'),
           new ValidateDtoMiddleware(CreateCommentDto),
           new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
@@ -111,41 +130,41 @@ export class OfferController extends BaseController {
   }
 
   public async index(
-    { query }: Request<unknown, unknown, unknown, RequestQueryInterface>,
+    { query, tokenPayload }: Request<unknown, unknown, unknown, RequestQueryInterface>,
     res: Response
   ): Promise<void> {
-    const offers = await this.offerService.find(query.limit);
+    const offers = await this.offerService.find(query.limit, tokenPayload?.id);
     this.ok(res, fillDTO(OfferPreviewRdo, offers));
   }
 
   public async create(
-    { body }: HttpRequest<CreateOfferDto>,
+    { body, tokenPayload }: HttpRequest<CreateOfferDto>,
     res: Response
   ): Promise<void> {
-    const offer = await this.offerService.create(body);
+    const offer = await this.offerService.create({ ...body, authorId: tokenPayload.id });
     this.created(res, fillDTO(OfferRdo, offer));
   }
 
   public async show(
-    { params }: Request<OfferIdRequestParam>,
+    { params, tokenPayload }: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
     const offerId = Array.isArray(params.offerId)
       ? params.offerId[0]
       : params.offerId;
-    const offer = await this.offerService.findById(offerId);
+    const offer = await this.offerService.findById(offerId, tokenPayload?.id);
 
     this.ok(res, fillDTO(OfferRdo, offer));
   }
 
   public async update(
-    { body, params }: Request<OfferIdRequestParam, unknown, UpdateOfferDto>,
+    { body, params, tokenPayload }: Request<OfferIdRequestParam, unknown, UpdateOfferDto>,
     res: Response
   ): Promise<void> {
     const offerId = Array.isArray(params.offerId)
       ? params.offerId[0]
       : params.offerId;
-    const updatedOffer = await this.offerService.updateById(offerId, body);
+    const updatedOffer = await this.offerService.updateById(offerId, { ...body, authorId: tokenPayload.id });
 
     this.ok(res, fillDTO(OfferRdo, updatedOffer));
   }
@@ -163,7 +182,7 @@ export class OfferController extends BaseController {
   }
 
   public async indexPremium(
-    { params }: Request<CityRequestParam>,
+    { params, tokenPayload }: Request<CityRequestParam>,
     res: Response
   ): Promise<void> {
     const validCities = [
@@ -179,7 +198,7 @@ export class OfferController extends BaseController {
       ? params.city[0]
       : params.city;
 
-    if (!(city in validCities)) {
+    if (!validCities.includes(city)) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
         'City must be in Paris | Cologne | Brussels | Amsterdam | Hamburg | Dusseldorf',
@@ -187,37 +206,37 @@ export class OfferController extends BaseController {
       );
     }
 
-    const premiumOffers = await this.offerService.findPremium(city);
+    const premiumOffers = await this.offerService.findPremium(city, tokenPayload?.id);
     this.ok(res, fillDTO(OfferPreviewRdo, premiumOffers));
   }
 
   public async indexFavorite(
-    _req: Request,
+    { tokenPayload }: Request,
     res: Response
   ): Promise<void> {
-    const favoriteOffers = await this.offerService.findFavorite();
+    const favoriteOffers = await this.offerService.findFavorite(tokenPayload.id);
     this.ok(res, fillDTO(OfferPreviewRdo, favoriteOffers));
   }
 
   public async makeFavorite(
-    { params }: Request<OfferIdRequestParam>,
+    { params, tokenPayload}: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
     const offerId = Array.isArray(params.offerId)
       ? params.offerId[0]
       : params.offerId;
-    await this.offerService.addToFavorite(offerId);
+    await this.offerService.addToFavorite(offerId, tokenPayload.id);
     this.created(res, void 0);
   }
 
   public async removeFavorite(
-    { params }: Request<OfferIdRequestParam>,
+    { params, tokenPayload }: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
     const offerId = Array.isArray(params.offerId)
       ? params.offerId[0]
       : params.offerId;
-    await this.offerService.removeFromFavorite(offerId);
+    await this.offerService.removeFromFavorite(offerId, tokenPayload.id);
     this.noContent(res, void 0);
   }
 
@@ -233,13 +252,13 @@ export class OfferController extends BaseController {
   }
 
   public async createComment(
-    { body, params }: Request<OfferIdRequestParam, unknown, CreateCommentDto>,
+    { body, params, tokenPayload }: Request<OfferIdRequestParam, unknown, CreateCommentDto>,
     res: Response
   ): Promise<void> {
     const offerId = Array.isArray(params.offerId)
       ? params.offerId[0]
       : params.offerId;
-    const comment = await this.commentService.create(offerId, body);
+    const comment = await this.commentService.create(offerId, { ...body, authorId: tokenPayload.id });
     this.created(res, fillDTO(CommentRdo, comment));
   }
 }

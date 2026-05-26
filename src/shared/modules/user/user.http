@@ -27,7 +27,7 @@ Content-Type: application/json
 ###
 
 ## Загрузить изображение аватара
-POST http://localhost:5000/users/69e391e24613cc52c5a3d205/avatar HTTP/1.1
+POST http://localhost:5000/users/6470bc383e30db679dfac2d2/avatar HTTP/1.1
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
@@ -36,5 +36,14 @@ Content-Type: image/png
 
 < /Users/mikey895/Desktop/screen.png
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+###
+
+## Проверить токен пользователя
+GET http://localhost:5000/users/auth/status HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRvcmFuc0BvdmVybG9vay5uZXQiLCJpZCI6IjY0NzBiYzM4M2UzMGRiNjc5ZGZhYzJkMiIsImlhdCI6MTY4NTk3NTQ4MiwiZXhwIjoxNjg2MTQ4MjgyfQ.Gq2-B1egouAnMxmXlR2ElVT6wCa97PS6lxzVI8LnGvo
+Content-Type: application/json
 
 ###
