@@ -46,5 +46,11 @@ export const configRestSchema = convict<RestSchema>({
     format: String,
     env: 'DB_NAME',
     default: 'six-cities'
-  }
+  },
+  UPLOAD_DIRECTORY: {
+    doc: 'Directory for upload files',
+    format: String,
+    env: 'UPLOAD_DIRECTORY',
+    default: null
+  },
 });
