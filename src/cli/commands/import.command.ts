@@ -43,13 +43,7 @@ export class ImportCommand implements CommandInterface {
   }
 
   public async execute(fileName: string): Promise<void> {
-    const uri = getMongoURI(
-      requireEnv('DB_USER'),
-      requireEnv('DB_PASSWORD'),
-      requireEnv('DB_HOST'),
-      requireEnv('DB_PORT'),
-      requireEnv('DB_NAME')
-    );
+    const uri = this.getDatabaseUri();
     this.salt = requireEnv('SALT');
 
     await this.databaseClient.connect(uri);
@@ -83,7 +77,7 @@ export class ImportCommand implements CommandInterface {
       password: DEFAULT_USER_PASSWORD
     }, this.salt);
 
-    await this.offerService.create({
+    const offerDto = {
       title: offer.title,
       description: offer.description,
       city: offer.city,
@@ -97,6 +91,18 @@ export class ImportCommand implements CommandInterface {
       amenities: offer.amenities,
       authorId: user.id,
       coordinates: offer.coordinates
-    });
+    };
+
+    await this.offerService.create(offerDto);
+  }
+
+  private getDatabaseUri(): string {
+    return getMongoURI(
+      requireEnv('DB_USER'),
+      requireEnv('DB_PASSWORD'),
+      requireEnv('DB_HOST'),
+      requireEnv('DB_PORT'),
+      requireEnv('DB_NAME')
+    );
   }
 }

@@ -3,7 +3,7 @@ import {inject, injectable} from 'inversify';
 import {ConfigInterface, RestSchema} from './models/index.js';
 import {Component} from '../../models/index.js';
 import {LoggerInterface} from '../logger/models/index.js';
-import {configRestSchema} from './rest.shema.js';
+import {configRestSchema} from './rest.schema.js';
 
 @injectable()
 export class RestConfig implements ConfigInterface<RestSchema> {

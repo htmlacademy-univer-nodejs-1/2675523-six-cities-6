@@ -6,9 +6,11 @@ import {
   HttpError,
   HttpMethod,
   HttpRequest, PathTransformer, PrivateRouteMiddleware,
+  RouteInterface,
   UploadFileMiddleware,
   ValidateDtoMiddleware,
-  ValidateObjectIdMiddleware
+  ValidateObjectIdMiddleware,
+  getRequestParam
 } from '../../libs/rest/index.js';
 import { StatusCodes } from 'http-status-codes';
 import { ConfigInterface, RestSchema } from '../../libs/config/index.js';
@@ -22,6 +24,11 @@ import {UserServiceInterface} from './models/user-service.interface.js';
 import {LoggerUserRdo} from './rdo/index.js';
 import {AuthServiceInterface} from '../auth/index.js';
 
+const USER_ID_PARAM = 'userId';
+const USER_ENTITY_NAME = 'User';
+const USER_CONTROLLER_NAME = 'UserController';
+const AVATAR_FIELD_NAME = 'avatar';
+
 @injectable()
 export class UserController extends BaseController {
   constructor(
@@ -34,7 +41,11 @@ export class UserController extends BaseController {
     super(logger, pathTransformer);
 
     this.logger.info('Registering routes for UserController...');
-    this.addRoutes([
+    this.addRoutes(this.getRoutes());
+  }
+
+  private getRoutes(): RouteInterface[] {
+    return [
       {
         path: '/register',
         method: HttpMethod.Post,
@@ -64,29 +75,21 @@ export class UserController extends BaseController {
         handler: this.uploadAvatar,
         middlewares: [
           new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('userId'),
-          new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), 'avatar'),
-          new DocumentExistsMiddleware(this.userService, 'User', 'userId')
+          new ValidateObjectIdMiddleware(USER_ID_PARAM),
+          new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), AVATAR_FIELD_NAME),
+          new DocumentExistsMiddleware(this.userService, USER_ENTITY_NAME, USER_ID_PARAM)
         ]
       }
-    ]);
+    ];
   }
 
   public async create(
     { body }: HttpRequest<CreateUserDto>,
     res: Response
   ): Promise<void> {
-    const existsUser = await this.userService.findByEmail(body.email);
-
-    if (existsUser) {
-      throw new HttpError(
-        StatusCodes.CONFLICT,
-        `User with email ${body.email} already exists`,
-        'UserController'
-      );
-    }
-
+    await this.ensureEmailAvailable(body.email);
     const result = await this.userService.create(body, this.config.get('SALT'));
+
     this.created(res, fillDTO(UserRdo, result));
   }
 
@@ -104,36 +107,65 @@ export class UserController extends BaseController {
     { tokenPayload }: Request,
     res: Response
   ): Promise<void> {
-    const foundedUser = tokenPayload?.id
-      ? await this.userService.findById(tokenPayload.id)
-      : null;
-
-    if (!foundedUser) {
-      throw new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'Unauthorized',
-        'UserController'
-      );
-    }
+    const foundedUser = await this.getUserByTokenPayload(tokenPayload?.id);
 
     this.ok(res, fillDTO(UserRdo, foundedUser));
   }
 
   public async uploadAvatar({ params, file, tokenPayload }: Request, res: Response): Promise<void> {
-    const userId = Array.isArray(params.userId)
-      ? params.userId[0]
-      : params.userId;
+    const userId = getRequestParam(params, USER_ID_PARAM);
+    this.ensureAvatarOwner(userId, tokenPayload?.id);
 
-    if (tokenPayload?.id !== userId) {
-      throw new HttpError(
-        StatusCodes.FORBIDDEN,
-        'You can upload avatar only for your own account',
-        'UserController'
-      );
+    const avatarFile = await this.saveAvatar(userId, file?.filename);
+    this.created(res, { filePath: avatarFile.avatar });
+  }
+
+  private async ensureEmailAvailable(email: string): Promise<void> {
+    const existsUser = await this.userService.findByEmail(email);
+
+    if (!existsUser) {
+      return;
     }
 
-    const uploadFile = { avatar: file?.filename };
-    await this.userService.updateById(userId, uploadFile);
-    this.created(res, { filePath: uploadFile.avatar });
+    throw new HttpError(
+      StatusCodes.CONFLICT,
+      `User with email ${email} already exists`,
+      USER_CONTROLLER_NAME
+    );
+  }
+
+  private async getUserByTokenPayload(userId?: string) {
+    const foundedUser = userId
+      ? await this.userService.findById(userId)
+      : null;
+
+    if (foundedUser) {
+      return foundedUser;
+    }
+
+    throw new HttpError(
+      StatusCodes.UNAUTHORIZED,
+      'Unauthorized',
+      USER_CONTROLLER_NAME
+    );
+  }
+
+  private ensureAvatarOwner(userId: string, tokenUserId?: string): void {
+    if (tokenUserId === userId) {
+      return;
+    }
+
+    throw new HttpError(
+      StatusCodes.FORBIDDEN,
+      'You can upload avatar only for your own account',
+      USER_CONTROLLER_NAME
+    );
+  }
+
+  private async saveAvatar(userId: string, filename?: string) {
+    const avatarFile = { avatar: filename };
+    await this.userService.updateById(userId, avatarFile);
+
+    return avatarFile;
   }
 }

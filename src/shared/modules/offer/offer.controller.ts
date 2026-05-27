@@ -5,17 +5,18 @@ import {
   DocumentOwnerMiddleware, HttpError, HttpMethod, HttpRequest, PathTransformer,
   PrivateRouteMiddleware,
   RequestQueryInterface,
-  ValidateDtoMiddleware, ValidateObjectIdMiddleware
+  RouteInterface,
+  ValidateDtoMiddleware, ValidateObjectIdMiddleware,
+  getRequestParam
 } from '../../libs/rest/index.js';
 import { fillDTO } from '../../helpers/index.js';
 import { OfferPreviewRdo } from './rdo/offer-preview.rdo.js';
 import { CreateOfferDto } from './dto/create-offer.dto.js';
 import { OfferRdo } from './rdo/offer.rdo.js';
 import { StatusCodes } from 'http-status-codes';
-import { OfferIdRequestParam } from './models/index.js';
+import { CityRequestParam, OfferIdRequestParam } from './models/index.js';
 import { UpdateOfferDto } from './dto/update-offer.dto.js';
-import { CityRequestParam } from './models/index.js';
-import {Component} from '../../models/index.js';
+import {Component, findCityName} from '../../models/index.js';
 import {LoggerInterface} from '../../libs/logger/models/index.js';
 import {OfferServiceInterface} from './models/index.js';
 import {
@@ -24,8 +25,19 @@ import {
   CreateCommentDto
 } from '../comment/index.js';
 
+const OFFER_ID_PARAM = 'offerId';
+const CITY_PARAM = 'city';
+const OFFER_ENTITY_NAME = 'Offer';
+const OFFER_CONTROLLER_NAME = 'OfferController';
+
 @injectable()
 export class OfferController extends BaseController {
+  private static parseOfferCountLimit(limit?: string): number | undefined {
+    return limit === undefined
+      ? undefined
+      : Number(limit);
+  }
+
   constructor(
     @inject(Component.Logger) protected readonly logger: LoggerInterface,
     @inject(Component.OfferService) private readonly offerService: OfferServiceInterface,
@@ -35,7 +47,11 @@ export class OfferController extends BaseController {
     super(logger, pathTransformer);
 
     this.logger.info('Registering routes for OfferController...');
-    this.addRoutes([
+    this.addRoutes(this.getRoutes());
+  }
+
+  private getRoutes(): RouteInterface[] {
+    return [
       { path: '/', method: HttpMethod.Get, handler: this.index },
       {
         path: '/',
@@ -59,10 +75,7 @@ export class OfferController extends BaseController {
         path: '/:offerId',
         method: HttpMethod.Get,
         handler: this.show,
-        middlewares: [
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getOfferExistsMiddlewares()
       },
       {
         path: '/:offerId',
@@ -70,51 +83,35 @@ export class OfferController extends BaseController {
         handler: this.update,
         middlewares: [
           new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('offerId'),
+          new ValidateObjectIdMiddleware(OFFER_ID_PARAM),
           new ValidateDtoMiddleware(UpdateOfferDto),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
-          new DocumentOwnerMiddleware(this.offerService, 'Offer', 'offerId')
+          new DocumentExistsMiddleware(this.offerService, OFFER_ENTITY_NAME, OFFER_ID_PARAM),
+          new DocumentOwnerMiddleware(this.offerService, OFFER_ENTITY_NAME, OFFER_ID_PARAM)
         ]
       },
       {
         path: '/:offerId',
         method: HttpMethod.Delete,
         handler: this.delete,
-        middlewares: [
-          new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
-          new DocumentOwnerMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getOwnerProtectedOfferMiddlewares()
       },
       {
         path: '/:offerId/favorite',
         method: HttpMethod.Post,
         handler: this.makeFavorite,
-        middlewares: [
-          new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getPrivateOfferExistsMiddlewares()
       },
       {
         path: '/:offerId/favorite',
         method: HttpMethod.Delete,
         handler: this.removeFavorite,
-        middlewares: [
-          new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getPrivateOfferExistsMiddlewares()
       },
       {
         path: '/:offerId/comments',
         method: HttpMethod.Get,
         handler: this.indexComments,
-        middlewares: [
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getOfferExistsMiddlewares()
       },
       {
         path: '/:offerId/comments',
@@ -127,26 +124,38 @@ export class OfferController extends BaseController {
           new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
         ]
       }
-    ]);
+    ];
+  }
+
+  private getOfferExistsMiddlewares() {
+    return [
+      new ValidateObjectIdMiddleware(OFFER_ID_PARAM),
+      new DocumentExistsMiddleware(this.offerService, OFFER_ENTITY_NAME, OFFER_ID_PARAM)
+    ];
+  }
+
+  private getPrivateOfferExistsMiddlewares() {
+    return [
+      new PrivateRouteMiddleware(),
+      ...this.getOfferExistsMiddlewares()
+    ];
+  }
+
+  private getOwnerProtectedOfferMiddlewares() {
+    return [
+      ...this.getPrivateOfferExistsMiddlewares(),
+      new DocumentOwnerMiddleware(this.offerService, OFFER_ENTITY_NAME, OFFER_ID_PARAM)
+    ];
   }
 
   public async index(
     { query, tokenPayload }: Request<unknown, unknown, unknown, RequestQueryInterface>,
     res: Response
   ): Promise<void> {
-    const limit = query.limit === undefined
-      ? undefined
-      : Number(query.limit);
-
-    if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'Limit must be a positive integer',
-        'OfferController'
-      );
-    }
-
+    const limit = OfferController.parseOfferCountLimit(query.limit);
+    this.ensureValidOfferCountLimit(limit);
     const offers = await this.offerService.find(limit, tokenPayload?.id);
+
     this.ok(res, fillDTO(OfferPreviewRdo, offers));
   }
 
@@ -162,9 +171,7 @@ export class OfferController extends BaseController {
     { params, tokenPayload }: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
-    const offerId = Array.isArray(params.offerId)
-      ? params.offerId[0]
-      : params.offerId;
+    const offerId = getRequestParam(params, OFFER_ID_PARAM);
     const offer = await this.offerService.findById(offerId, tokenPayload?.id);
 
     this.ok(res, fillDTO(OfferRdo, offer));
@@ -174,9 +181,7 @@ export class OfferController extends BaseController {
     { body, params, tokenPayload }: Request<OfferIdRequestParam, unknown, UpdateOfferDto>,
     res: Response
   ): Promise<void> {
-    const offerId = Array.isArray(params.offerId)
-      ? params.offerId[0]
-      : params.offerId;
+    const offerId = getRequestParam(params, OFFER_ID_PARAM);
     const updatedOffer = await this.offerService.updateById(offerId, { ...body, authorId: tokenPayload.id });
 
     this.ok(res, fillDTO(OfferRdo, updatedOffer));
@@ -186,9 +191,7 @@ export class OfferController extends BaseController {
     { params }: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
-    const offerId = Array.isArray(params.offerId)
-      ? params.offerId[0]
-      : params.offerId;
+    const offerId = getRequestParam(params, OFFER_ID_PARAM);
     await this.offerService.deleteById(offerId);
     await this.commentService.deleteByOfferId(offerId);
     this.noContent(res, void 0);
@@ -198,26 +201,8 @@ export class OfferController extends BaseController {
     { params, tokenPayload }: Request<CityRequestParam>,
     res: Response
   ): Promise<void> {
-    const validCities = [
-      'Paris',
-      'Cologne',
-      'Brussels',
-      'Amsterdam',
-      'Hamburg',
-      'Dusseldorf'
-    ];
-
-    const city = Array.isArray(params.city)
-      ? params.city[0]
-      : params.city;
-
-    if (!validCities.includes(city)) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'City must be in Paris | Cologne | Brussels | Amsterdam | Hamburg | Dusseldorf',
-        'OfferController'
-      );
-    }
+    const city = getRequestParam(params, CITY_PARAM);
+    this.ensureKnownCity(city);
 
     const premiumOffers = await this.offerService.findPremium(city, tokenPayload?.id);
     this.ok(res, fillDTO(OfferPreviewRdo, premiumOffers));
@@ -235,9 +220,7 @@ export class OfferController extends BaseController {
     { params, tokenPayload}: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
-    const offerId = Array.isArray(params.offerId)
-      ? params.offerId[0]
-      : params.offerId;
+    const offerId = getRequestParam(params, OFFER_ID_PARAM);
     await this.offerService.addToFavorite(offerId, tokenPayload.id);
     this.created(res, void 0);
   }
@@ -246,9 +229,7 @@ export class OfferController extends BaseController {
     { params, tokenPayload }: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
-    const offerId = Array.isArray(params.offerId)
-      ? params.offerId[0]
-      : params.offerId;
+    const offerId = getRequestParam(params, OFFER_ID_PARAM);
     await this.offerService.removeFromFavorite(offerId, tokenPayload.id);
     this.noContent(res, void 0);
   }
@@ -257,9 +238,7 @@ export class OfferController extends BaseController {
     { params }: Request<OfferIdRequestParam>,
     res: Response
   ): Promise<void> {
-    const offerId = Array.isArray(params.offerId)
-      ? params.offerId[0]
-      : params.offerId;
+    const offerId = getRequestParam(params, OFFER_ID_PARAM);
     const comments = await this.commentService.findByOfferId(offerId);
     this.ok(res, fillDTO(CommentRdo, comments));
   }
@@ -268,10 +247,32 @@ export class OfferController extends BaseController {
     { body, params, tokenPayload }: Request<OfferIdRequestParam, unknown, CreateCommentDto>,
     res: Response
   ): Promise<void> {
-    const offerId = Array.isArray(params.offerId)
-      ? params.offerId[0]
-      : params.offerId;
+    const offerId = getRequestParam(params, OFFER_ID_PARAM);
     const comment = await this.commentService.create(offerId, { ...body, authorId: tokenPayload.id });
     this.created(res, fillDTO(CommentRdo, comment));
+  }
+
+  private ensureValidOfferCountLimit(limit?: number): void {
+    if (limit === undefined || (Number.isInteger(limit) && limit > 0)) {
+      return;
+    }
+
+    throw new HttpError(
+      StatusCodes.BAD_REQUEST,
+      'Limit must be a positive integer',
+      OFFER_CONTROLLER_NAME
+    );
+  }
+
+  private ensureKnownCity(city: string): void {
+    if (findCityName(city)) {
+      return;
+    }
+
+    throw new HttpError(
+      StatusCodes.BAD_REQUEST,
+      'City must be in Paris | Cologne | Brussels | Amsterdam | Hamburg | Dusseldorf',
+      OFFER_CONTROLLER_NAME
+    );
   }
 }

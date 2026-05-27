@@ -5,7 +5,7 @@ import { inject } from 'inversify';
 import {LoggerInterface} from '../../../libs/logger/models/index.js';
 import {Component} from '../../../models/index.js';
 import {UserServiceInterface} from '../models/user-service.interface.js';
-import {DEFAULT_AVATAR_FILE_NAME} from '../consts/user.constant.js';
+import {DEFAULT_AVATAR_FILE_NAME} from '../constants/user.constant.js';
 
 export class DefaultUserService implements UserServiceInterface {
   constructor(
@@ -14,23 +14,22 @@ export class DefaultUserService implements UserServiceInterface {
   ) {}
 
   public async create(dto: CreateUserDto, salt: string): Promise<DocumentType<UserEntity>> {
-    const user = new UserEntity({ ...dto, avatar: DEFAULT_AVATAR_FILE_NAME });
-    user.setPassword(dto.password, salt);
-
+    const user = this.createUserEntity(dto, salt);
     const result = await this.userModel.create(user);
+
     this.logger.info(`New user created: ${user.email}`);
 
     return result;
   }
 
   public async findByEmail(email: string): Promise<DocumentType<UserEntity> | null> {
-    return await this.userModel
+    return this.userModel
       .findOne({ email })
       .exec();
   }
 
   public async findById(userId: string): Promise<DocumentType<UserEntity> | null> {
-    return await this.userModel
+    return this.userModel
       .findById(userId)
       .exec();
   }
@@ -49,8 +48,15 @@ export class DefaultUserService implements UserServiceInterface {
   }
 
   public async updateById(userId: string, dto: UpdateUserDto): Promise<DocumentType<UserEntity> | null> {
-    return await this.userModel
+    return this.userModel
       .findByIdAndUpdate(userId, dto, { new: true })
       .exec();
+  }
+
+  private createUserEntity(dto: CreateUserDto, salt: string): UserEntity {
+    const user = new UserEntity({ ...dto, avatar: DEFAULT_AVATAR_FILE_NAME });
+    user.setPassword(dto.password, salt);
+
+    return user;
   }
 }

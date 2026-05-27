@@ -16,7 +16,7 @@ function isTokenPayload(payload: unknown): payload is TokenPayloadInterface {
 }
 
 export class ParseTokenMiddleware implements MiddlewareInterface {
-  constructor(private readonly _jwtSecret: string) {}
+  constructor(private readonly jwtSecret: string) {}
 
   public async execute(req: Request, _res: Response, next: NextFunction): Promise<void> {
     const authorizationHeaders: string[] | undefined = req.headers?.authorization?.split(' ');
@@ -25,21 +25,26 @@ export class ParseTokenMiddleware implements MiddlewareInterface {
     }
 
     const [, token] = authorizationHeaders;
+
     try {
-      const { payload } = await jwtVerify(token, createSecretKey(this._jwtSecret, 'utf-8'));
+      const { payload } = await jwtVerify(token, createSecretKey(this.jwtSecret, 'utf-8'));
 
-      if (isTokenPayload(payload)) {
-        req.tokenPayload = { ...payload };
-        return next(
-
-        );
+      if (!isTokenPayload(payload)) {
+        return next(this.createInvalidTokenError());
       }
+
+      req.tokenPayload = { ...payload };
+      return next();
     } catch {
-      return next(new HttpError(
-        StatusCodes.UNAUTHORIZED,
-        'Invalid token',
-        'ParseTokenMiddleware'
-      ));
+      return next(this.createInvalidTokenError());
     }
+  }
+
+  private createInvalidTokenError(): HttpError {
+    return new HttpError(
+      StatusCodes.UNAUTHORIZED,
+      'Invalid token',
+      'ParseTokenMiddleware'
+    );
   }
 }

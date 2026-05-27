@@ -1,7 +1,7 @@
 import { UserInterface } from './user.interface.js';
 import { CityName } from './city.interface.js';
 import { HouseType } from './house.type.js';
-import { AmenitiesType } from './amentities.type.js';
+import { AmenitiesType } from './amenities.type.js';
 
 export interface CoordinatesInterface {
   latitude: number;

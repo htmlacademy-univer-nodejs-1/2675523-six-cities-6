@@ -40,11 +40,18 @@ export class VersionCommand implements CommandInterface {
   public async execute(..._parameters: string[]): Promise<void> {
     try {
       const version = this.readVersion();
-      console.info(chalk.blue(version));
+      this.printVersion(version);
     } catch (error: unknown) {
-      console.error(chalk.red(`Failed to read version from ${this.filePath}`));
-      console.error(chalk.red(getErrorMessage(error)));
+      this.printError(error);
     }
   }
-}
 
+  private printVersion(version: string): void {
+    console.info(chalk.blue(version));
+  }
+
+  private printError(error: unknown): void {
+    console.error(chalk.red(`Failed to read version from ${this.filePath}`));
+    console.error(chalk.red(getErrorMessage(error)));
+  }
+}

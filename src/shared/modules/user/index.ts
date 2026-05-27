@@ -5,4 +5,4 @@ export * from './user.container.js';
 export * from './user.controller.js';
 export * from './dto/index.js';
 export * from './rdo/index.js';
-export * from './consts/user.constant.js';
+export * from './constants/user.constant.js';

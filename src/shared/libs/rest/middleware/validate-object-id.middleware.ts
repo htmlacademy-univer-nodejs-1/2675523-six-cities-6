@@ -3,13 +3,13 @@ import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
 import { HttpError } from '../errors/index.js';
 import {MiddlewareInterface} from './models/middleware.interface.js';
+import { getRequestParam } from '../helpers/index.js';
 
 export class ValidateObjectIdMiddleware implements MiddlewareInterface {
-  constructor(private readonly _param: string) {}
+  constructor(private readonly paramName: string) {}
 
   public execute({ params }: Request, _res: Response, next: NextFunction): void {
-    const raw = params[this._param];
-    const objectId = Array.isArray(raw) ? raw[0] : raw;
+    const objectId = getRequestParam(params, this.paramName);
 
     if (Types.ObjectId.isValid(objectId)) {
       return next();

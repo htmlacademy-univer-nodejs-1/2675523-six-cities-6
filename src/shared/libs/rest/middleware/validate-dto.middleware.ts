@@ -6,10 +6,10 @@ import {reduceValidationErrors} from '../../../helpers/index.js';
 import {ValidationError} from '../errors/index.js';
 
 export class ValidateDtoMiddleware implements MiddlewareInterface {
-  constructor (private readonly _dto: ClassConstructor<object>) {}
+  constructor (private readonly dto: ClassConstructor<object>) {}
 
   public async execute({ body, path }: Request, _res: Response, next: NextFunction): Promise<void> {
-    const dtoInstance = plainToInstance(this._dto, body);
+    const dtoInstance = plainToInstance(this.dto, body);
     const errors = await validate(dtoInstance);
 
     if (errors.length > 0) {
