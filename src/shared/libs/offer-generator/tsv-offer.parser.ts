@@ -8,7 +8,7 @@ import {
   findUserType,
   HouseType,
   OfferInterface, UserInterface
-} from '../models/index.js';
+} from '../../models/index.js';
 
 type OfferDataFields = {
   title: string;

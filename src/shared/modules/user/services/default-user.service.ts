@@ -5,7 +5,7 @@ import { inject } from 'inversify';
 import {LoggerInterface} from '../../../libs/logger/models/index.js';
 import {Component} from '../../../models/index.js';
 import {UserServiceInterface} from '../models/user-service.interface.js';
-import {DEFAULT_AVATAR_FILE_NAME} from '../consts/user.constant.js';
+import {DEFAULT_AVATAR_FILE_NAME} from '../constants/user.constant.js';
 
 export class DefaultUserService implements UserServiceInterface {
   constructor(
