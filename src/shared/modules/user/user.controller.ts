@@ -8,7 +8,8 @@ import {
   HttpRequest, PathTransformer, PrivateRouteMiddleware,
   UploadFileMiddleware,
   ValidateDtoMiddleware,
-  ValidateObjectIdMiddleware
+  ValidateObjectIdMiddleware,
+  getRequestParam
 } from '../../libs/rest/index.js';
 import { StatusCodes } from 'http-status-codes';
 import { ConfigInterface, RestSchema } from '../../libs/config/index.js';
@@ -120,9 +121,7 @@ export class UserController extends BaseController {
   }
 
   public async uploadAvatar({ params, file, tokenPayload }: Request, res: Response): Promise<void> {
-    const userId = Array.isArray(params.userId)
-      ? params.userId[0]
-      : params.userId;
+    const userId = getRequestParam(params, 'userId');
 
     if (tokenPayload?.id !== userId) {
       throw new HttpError(

@@ -3,6 +3,7 @@ import { HttpError } from '../errors/index.js';
 import { StatusCodes } from 'http-status-codes';
 import {MiddlewareInterface} from './models/middleware.interface.js';
 import {DocumentExistsInterface} from '../models/index.js';
+import { getRequestParam } from '../helpers/index.js';
 
 export class DocumentExistsMiddleware implements MiddlewareInterface {
   constructor(
@@ -12,8 +13,7 @@ export class DocumentExistsMiddleware implements MiddlewareInterface {
   ) {}
 
   public async execute({ params }: Request, _res: Response, next: NextFunction): Promise<void> {
-    const raw = params[this._paramName];
-    const documentId = Array.isArray(raw) ? raw[0] : raw;
+    const documentId = getRequestParam(params, this._paramName);
 
     if (!await this._service.exists(documentId)) {
       throw new HttpError(

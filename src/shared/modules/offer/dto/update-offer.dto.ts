@@ -77,6 +77,7 @@ export class UpdateOfferDto {
 
   @IsOptional()
   @IsArray({ message: OfferValidationMessage.amenities.isArray })
+  @ArrayMinSize(1)
   @IsIn(AMENITY_TYPES, {
     each: true,
     message: OfferValidationMessage.amenities.invalid,

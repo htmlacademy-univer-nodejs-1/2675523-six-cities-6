@@ -9,18 +9,18 @@ import {DEFAULT_COMMENTS_COUNT} from '../constants/comment.constant.js';
 @injectable()
 export class DefaultCommentService implements CommentServiceInterface {
   constructor(
-    @inject(Component.CommentModel) private readonly _commentModel: types.ModelType<CommentEntity>
+    @inject(Component.CommentModel) private readonly commentModel: types.ModelType<CommentEntity>
   ) {}
 
   public async create(offerId: string, dto: CreateCommentDto): Promise<DocumentType<CommentEntity>> {
-    const comment = await this._commentModel.create({ ...dto, offerId });
+    const comment = await this.commentModel.create({ ...dto, offerId });
     await comment.populate('authorId');
 
     return comment;
   }
 
   public async findByOfferId(offerId: string): Promise<Array<DocumentType<CommentEntity>>> {
-    return await this._commentModel
+    return this.commentModel
       .find({offerId})
       .populate('authorId')
       .sort({createdAt: -1})
@@ -29,7 +29,7 @@ export class DefaultCommentService implements CommentServiceInterface {
   }
 
   public async deleteByOfferId(offerId: string): Promise<number | null> {
-    const result = await this._commentModel
+    const result = await this.commentModel
       .deleteMany({ offerId })
       .exec();
 

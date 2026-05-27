@@ -24,13 +24,13 @@ export class DefaultUserService implements UserServiceInterface {
   }
 
   public async findByEmail(email: string): Promise<DocumentType<UserEntity> | null> {
-    return await this.userModel
+    return this.userModel
       .findOne({ email })
       .exec();
   }
 
   public async findById(userId: string): Promise<DocumentType<UserEntity> | null> {
-    return await this.userModel
+    return this.userModel
       .findById(userId)
       .exec();
   }
@@ -49,7 +49,7 @@ export class DefaultUserService implements UserServiceInterface {
   }
 
   public async updateById(userId: string, dto: UpdateUserDto): Promise<DocumentType<UserEntity> | null> {
-    return await this.userModel
+    return this.userModel
       .findByIdAndUpdate(userId, dto, { new: true })
       .exec();
   }
