@@ -9,7 +9,7 @@
   ],
   "main": "main.js",
   "scripts": {
-    "start": "npm run build && node ./dist/main.js",
+    "start": "npm run build && node ./dist/main.rest.js",
     "start:dev": "npm run ts ./src/main.rest.ts | pino-pretty --colorize --translateTime SYS:standard",
     "build": "npm run clean && npm run compile",
     "lint": "eslint src/ --ext .ts",
@@ -17,7 +17,10 @@
     "compile": "tsc -p tsconfig.json",
     "clean": "rimraf dist",
     "cli": "node --loader ts-node/esm src/main.cli.ts",
-    "mock:server": "json-server ./mocks/mock-server-data.json --port 3123"
+    "mock:server": "json-server ./mocks/mock-server-data.json --port 3123",
+    "cli:version": "npm run cli -- --version",
+    "cli:import": "npm run cli -- --import ./mocks/test-data.mock.tsv",
+    "cli:generate": "npm run cli -- --generate 1 ./mocks/test-data.mock.tsv http://localhost:3123/api"
   },
   "devDependencies": {
     "@types/convict": "6.1.6",
@@ -51,6 +54,8 @@
     "class-validator": "0.15.1",
     "convict": "6.2.4",
     "convict-format-with-validator": "6.2.0",
+    "@types/cors": "2.8.19",
+    "cors": "2.8.6",
     "dotenv": "17.3.1",
     "express": "5.2.1",
     "got": "13.0.0",

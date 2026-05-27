@@ -11,19 +11,15 @@ export interface CoordinatesInterface {
 export interface OfferInterface {
   title: string;
   description: string;
-  publishDate: Date;
   city: CityName;
   previewImage: string;
   photos: string[];
   isPremium: boolean;
-  isFavorite: boolean;
-  rating: number;
   type: HouseType;
   rooms: number;
   price: number;
   amenities: AmenitiesType[];
   author: UserInterface;
-  commentsCount: number;
   coordinates: CoordinatesInterface;
   guestsCount: number;
 }

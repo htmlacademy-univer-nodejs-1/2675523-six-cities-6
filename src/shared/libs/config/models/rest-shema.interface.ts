@@ -8,4 +8,7 @@ export interface RestSchema {
   DB_NAME: string;
   UPLOAD_DIRECTORY: string;
   JWT_SECRET: string;
+  SERVER_HOST_PROTOCOL: 'http' | 'https';
+  HOST: string;
+  STATIC_DIRECTORY: string;
 }

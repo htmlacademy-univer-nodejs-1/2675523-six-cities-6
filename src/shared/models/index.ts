@@ -6,3 +6,4 @@ export * from './amentities.type.js';
 export * from './house.type.js';
 export * from './mock-server-data.interface.js';
 export * from './component.enum.js';
+export * from './validation-error-field.interface.js';

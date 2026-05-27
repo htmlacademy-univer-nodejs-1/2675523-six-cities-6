@@ -292,6 +292,49 @@ paths:
         "409":
           description: Пользователь с таким адресом электронной почты уже зарегистрирован
 
+  /users/{userId}/avatar:
+    post:
+      tags:
+        - users
+      summary: Загрузка аватара пользователя
+      description: Загружает изображение аватара для авторизованного пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/userId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - avatar
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: Файл изображения (png, jpg, jpeg)
+      responses:
+        "201":
+          description: Аватар успешно загружен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  filePath:
+                    type: string
+                    example: uploads/abc123.jpg
+        "400":
+          description: Некорректный файл или userId
+        "401":
+          $ref: "#/components/responses/unauthorizedError"
+        "403":
+          description: Пользователь может загружать аватар только для своего аккаунта
+        "404":
+          description: Пользователь не найден
+
   /users/auth/login:
     post:
       tags:
@@ -354,6 +397,12 @@ components:
   parameters:
     offerId:
       name: offerId
+      in: path
+      required: true
+      schema:
+        type: string
+    userId:
+      name: userId
       in: path
       required: true
       schema:
@@ -549,8 +598,6 @@ components:
         email:
           type: string
           example: email@email.com
-        avatar:
-          type: string
         type:
           type: string
           enum:

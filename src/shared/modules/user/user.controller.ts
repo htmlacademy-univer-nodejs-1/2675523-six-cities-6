@@ -5,7 +5,7 @@ import {
   DocumentExistsMiddleware,
   HttpError,
   HttpMethod,
-  HttpRequest, PrivateRouteMiddleware,
+  HttpRequest, PathTransformer, PrivateRouteMiddleware,
   UploadFileMiddleware,
   ValidateDtoMiddleware,
   ValidateObjectIdMiddleware
@@ -14,8 +14,8 @@ import { StatusCodes } from 'http-status-codes';
 import { ConfigInterface, RestSchema } from '../../libs/config/index.js';
 import { fillDTO } from '../../helpers/index.js';
 import { UserRdo } from './rdo/user.rdo.js';
-import { CreateUserDto } from './dto/create-user.dto.js';
-import { LoginUserDto } from './dto/login-user.dto.js';
+import { CreateUserDto } from './dto/index.js';
+import { LoginUserDto } from './dto/index.js';
 import {Component} from '../../models/index.js';
 import {LoggerInterface} from '../../libs/logger/models/index.js';
 import {UserServiceInterface} from './models/user-service.interface.js';
@@ -29,8 +29,9 @@ export class UserController extends BaseController {
     @inject(Component.UserService) private readonly userService: UserServiceInterface,
     @inject(Component.Config) private readonly config: ConfigInterface<RestSchema>,
     @inject(Component.AuthService) private readonly authService: AuthServiceInterface,
+    @inject(Component.PathTransformer) protected readonly pathTransformer: PathTransformer,
   ) {
-    super(logger);
+    super(logger, pathTransformer);
 
     this.logger.info('Registering routes for UserController...');
     this.addRoutes([
@@ -38,7 +39,10 @@ export class UserController extends BaseController {
         path: '/register',
         method: HttpMethod.Post,
         handler: this.create,
-        middlewares: [new ValidateDtoMiddleware(CreateUserDto)]
+        middlewares: [
+          new PrivateRouteMiddleware(true),
+          new ValidateDtoMiddleware(CreateUserDto)
+        ]
       },
       {
         path: '/auth/login',
@@ -59,6 +63,7 @@ export class UserController extends BaseController {
         method: HttpMethod.Post,
         handler: this.uploadAvatar,
         middlewares: [
+          new PrivateRouteMiddleware(),
           new ValidateObjectIdMiddleware('userId'),
           new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), 'avatar'),
           new DocumentExistsMiddleware(this.userService, 'User', 'userId')
@@ -114,9 +119,21 @@ export class UserController extends BaseController {
     this.ok(res, fillDTO(UserRdo, foundedUser));
   }
 
-  public async uploadAvatar(req: Request, res: Response): Promise<void> {
-    this.created(res, {
-      filePath: req.file?.path
-    });
+  public async uploadAvatar({ params, file, tokenPayload }: Request, res: Response): Promise<void> {
+    const userId = Array.isArray(params.userId)
+      ? params.userId[0]
+      : params.userId;
+
+    if (tokenPayload?.id !== userId) {
+      throw new HttpError(
+        StatusCodes.FORBIDDEN,
+        'You can upload avatar only for your own account',
+        'UserController'
+      );
+    }
+
+    const uploadFile = { avatar: file?.filename };
+    await this.userService.updateById(userId, uploadFile);
+    this.created(res, { filePath: uploadFile.avatar });
   }
 }

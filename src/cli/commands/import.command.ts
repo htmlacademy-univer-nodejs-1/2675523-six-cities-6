@@ -1,6 +1,6 @@
 import { CommandInterface } from './models/index.js';
 import {
-  createOffer, getMongoURI, OfferInterface,
+  createOffer, getMongoURI, OfferInterface, requireEnv,
   TSVFileReader
 } from '../../shared/index.js';
 import {
@@ -17,7 +17,6 @@ import {
 import {LoggerInterface} from '../../shared/libs/logger/models/index.js';
 import {ConsoleLogger} from '../../shared/libs/logger/index.js';
 import {
-  DEFAULT_DB_PORT,
   DEFAULT_USER_PASSWORD
 } from './constants/command.constant.js';
 import {FavoriteModel} from '../../shared/modules/favorite/index.js';
@@ -43,16 +42,15 @@ export class ImportCommand implements CommandInterface {
     return '--import';
   }
 
-  public async execute(
-    fileName: string,
-    login: string,
-    password: string,
-    host: string,
-    dbName: string,
-    salt: string
-  ): Promise<void> {
-    const uri = getMongoURI(login, password, host, DEFAULT_DB_PORT, dbName);
-    this.salt = salt;
+  public async execute(fileName: string): Promise<void> {
+    const uri = getMongoURI(
+      requireEnv('DB_USER'),
+      requireEnv('DB_PASSWORD'),
+      requireEnv('DB_HOST'),
+      requireEnv('DB_PORT'),
+      requireEnv('DB_NAME')
+    );
+    this.salt = requireEnv('SALT');
 
     await this.databaseClient.connect(uri);
 

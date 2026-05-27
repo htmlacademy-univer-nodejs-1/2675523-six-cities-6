@@ -11,13 +11,10 @@ export function createOffer(offerData: string): OfferInterface {
   const [
     title,
     description,
-    publishDate,
     cityName,
     previewImage,
     photosRaw,
     isPremiumRaw,
-    isFavoriteRaw,
-    ratingRaw,
     typeRaw,
     roomsRaw,
     guestsCount,
@@ -25,9 +22,7 @@ export function createOffer(offerData: string): OfferInterface {
     amenitiesRaw,
     authorName,
     authorEmail,
-    authorAvatar,
     authorTypeRaw,
-    commentsCountRaw,
     coordinatesRaw
   ] = offerData.replace('\n', '').split('\t');
 
@@ -63,27 +58,23 @@ export function createOffer(offerData: string): OfferInterface {
   const author: UserInterface = {
     name: authorName?.trim(),
     email: authorEmail?.trim(),
-    avatar: authorAvatar?.trim() || undefined,
+    avatar: '',
     type: userType,
   };
 
   return {
     title: title?.trim(),
     description: description?.trim(),
-    publishDate: new Date(publishDate),
     city,
     previewImage: previewImage?.trim(),
     photos: photosRaw?.split(';').map((photo) => photo.trim()),
     isPremium: isPremiumRaw?.trim().toLowerCase() === 'true',
-    isFavorite: isFavoriteRaw?.trim().toLowerCase() === 'true',
-    rating: Number.parseFloat(ratingRaw),
     type: houseType,
     rooms: Number.parseInt(roomsRaw, 10),
     price: Number.parseInt(priceRaw, 10),
     amenities,
     author,
     guestsCount: parseInt(guestsCount, 10),
-    commentsCount: Number.parseInt(commentsCountRaw, 10),
     coordinates: {
       latitude,
       longitude,

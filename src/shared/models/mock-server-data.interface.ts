@@ -6,6 +6,5 @@ export interface MockServerData {
   housingImages: string[],
   authorNames: string[],
   authorEmails: string[],
-  authorAvatars: string[],
   coordinatesValues: Array<[number, number]>
 }

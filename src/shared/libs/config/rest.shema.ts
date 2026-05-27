@@ -59,4 +59,22 @@ export const configRestSchema = convict<RestSchema>({
     env: 'JWT_SECRET',
     default: null
   },
+  SERVER_HOST_PROTOCOL: {
+    doc: 'Protocol of the server host (http or https)',
+    format: ['http', 'https'],
+    env: 'SERVER_HOST_PROTOCOL',
+    default: 'http'
+  },
+  HOST: {
+    doc: 'Host where the service is started',
+    format: String,
+    env: 'HOST',
+    default: 'localhost'
+  },
+  STATIC_DIRECTORY: {
+    doc: 'Directory with static resourses',
+    format: String,
+    env: 'STATIC_DIRECTORY',
+    default: 'static'
+  }
 });

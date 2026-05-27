@@ -2,7 +2,7 @@ import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorCon
 
 @ValidatorConstraint({ name: 'isCoordinates', async: false })
 export class IsCoordinatesConstraint implements ValidatorConstraintInterface {
-  validate(value: unknown): boolean {
+  public validate(value: unknown): boolean {
     if (!value || typeof value !== 'object') {
       return false;
     }
@@ -22,7 +22,7 @@ export class IsCoordinatesConstraint implements ValidatorConstraintInterface {
     );
   }
 
-  defaultMessage(): string {
+  public defaultMessage(): string {
     return 'Coordinates must contain valid latitude (-90..90) and longitude (-180..180)';
   }
 }

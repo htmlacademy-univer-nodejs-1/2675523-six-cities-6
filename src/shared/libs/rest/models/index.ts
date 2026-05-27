@@ -6,3 +6,4 @@ export * from './http-method.enum.js';
 export * from './document-exists.interface.js';
 export * from './request-query.interface.js';
 export * from './document-owner-check.interface.js';
+export * from './application-error.enum.js';

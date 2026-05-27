@@ -2,7 +2,7 @@ import { inject, injectable } from 'inversify';
 import { Request, Response } from 'express';
 import {
   BaseController, DocumentExistsMiddleware,
-  DocumentOwnerMiddleware, HttpError, HttpMethod, HttpRequest,
+  DocumentOwnerMiddleware, HttpError, HttpMethod, HttpRequest, PathTransformer,
   PrivateRouteMiddleware,
   RequestQueryInterface,
   ValidateDtoMiddleware, ValidateObjectIdMiddleware
@@ -29,9 +29,10 @@ export class OfferController extends BaseController {
   constructor(
     @inject(Component.Logger) protected readonly logger: LoggerInterface,
     @inject(Component.OfferService) private readonly offerService: OfferServiceInterface,
-    @inject(Component.CommentService) private readonly commentService: CommentServiceInterface
+    @inject(Component.CommentService) private readonly commentService: CommentServiceInterface,
+    @inject(Component.PathTransformer) protected readonly pathTransformer: PathTransformer
   ) {
-    super(logger);
+    super(logger, pathTransformer);
 
     this.logger.info('Registering routes for OfferController...');
     this.addRoutes([
@@ -133,7 +134,19 @@ export class OfferController extends BaseController {
     { query, tokenPayload }: Request<unknown, unknown, unknown, RequestQueryInterface>,
     res: Response
   ): Promise<void> {
-    const offers = await this.offerService.find(query.limit, tokenPayload?.id);
+    const limit = query.limit === undefined
+      ? undefined
+      : Number(query.limit);
+
+    if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'Limit must be a positive integer',
+        'OfferController'
+      );
+    }
+
+    const offers = await this.offerService.find(limit, tokenPayload?.id);
     this.ok(res, fillDTO(OfferPreviewRdo, offers));
   }
 
