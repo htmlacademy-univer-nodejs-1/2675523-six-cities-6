@@ -10,26 +10,18 @@ const DEFAULT_CONTENT_TYPE = 'application/json';
 
 @injectable()
 export abstract class BaseController implements ControllerInterface {
-  private readonly _router: Router;
+  private readonly controllerRouter: Router;
 
   protected constructor(protected readonly logger: LoggerInterface, protected readonly pathTransformer: PathTransformer) {
-    this._router = Router();
+    this.controllerRouter = Router();
   }
 
   public get router() {
-    return this._router;
+    return this.controllerRouter;
   }
 
   public addRoutes(routes: RouteInterface[]): void {
-    routes.forEach((route) => {
-      const handlers = [
-        ...(route.middlewares?.map((item) => item.execute.bind(item)) ?? []),
-        route.handler.bind(this)
-      ];
-
-      this._router[route.method](route.path, handlers);
-      this.logger.info(`Route registered: ${route.method.toUpperCase()} ${route.path}`);
-    });
+    routes.forEach((route) => this.addRoute(route));
   }
 
   public send<T>(res: Response, statusCode: number, data: T): void {
@@ -51,5 +43,15 @@ export abstract class BaseController implements ControllerInterface {
 
   public noContent<T>(res: Response, data: T): void {
     this.send(res, StatusCodes.NO_CONTENT, data);
+  }
+
+  private addRoute(route: RouteInterface): void {
+    const handlers = [
+      ...(route.middlewares?.map((item) => item.execute.bind(item)) ?? []),
+      route.handler.bind(this)
+    ];
+
+    this.controllerRouter[route.method](route.path, handlers);
+    this.logger.info(`Route registered: ${route.method.toUpperCase()} ${route.path}`);
   }
 }

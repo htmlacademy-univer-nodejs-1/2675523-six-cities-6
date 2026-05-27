@@ -6,6 +6,8 @@ import {MiddlewareInterface} from './models/middleware.interface.js';
 import {HttpError} from '../errors/index.js';
 import {StatusCodes} from 'http-status-codes';
 
+const ALLOWED_IMAGE_MIME_TYPES = ['image/png', 'image/jpg', 'image/jpeg'];
+
 export class UploadFileMiddleware implements MiddlewareInterface {
   constructor(
     private readonly uploadDirectory: string,
@@ -16,27 +18,14 @@ export class UploadFileMiddleware implements MiddlewareInterface {
     const storage = diskStorage({
       destination: this.uploadDirectory,
       filename: (_req, file, callback) => {
-        const fileExtension = extension(file.mimetype);
-        if (!fileExtension) {
-          callback(new HttpError(
-            StatusCodes.BAD_REQUEST,
-            `Cannot resolve extension for mimetype ${file.mimetype}`,
-            'UploadFileMiddleware',
-          ), '');
-
-          return;
-        }
-
-        const filename = nanoid();
-        callback(null, `${filename}.${fileExtension}`);
+        this.resolveFileName(file.mimetype, callback);
       }
     });
 
     const uploadSingleFileMiddleware = multer({
       storage,
       fileFilter: (_req, file, callback) => {
-        const isFileAllowed = ['image/png', 'image/jpg', 'image/jpeg'].includes(file.mimetype);
-        if (!isFileAllowed) {
+        if (!this.isFileAllowed(file.mimetype)) {
           callback(new HttpError(
             StatusCodes.BAD_REQUEST,
             'Only .png and .jpg images are allowed',
@@ -52,5 +41,28 @@ export class UploadFileMiddleware implements MiddlewareInterface {
       .single(this.fieldName);
 
     uploadSingleFileMiddleware(req, res, next);
+  }
+
+  private resolveFileName(
+    mimetype: string,
+    callback: (error: Error | null, filename: string) => void
+  ): void {
+    const fileExtension = extension(mimetype);
+
+    if (!fileExtension) {
+      callback(new HttpError(
+        StatusCodes.BAD_REQUEST,
+        `Cannot resolve extension for mimetype ${mimetype}`,
+        'UploadFileMiddleware',
+      ), '');
+
+      return;
+    }
+
+    callback(null, `${nanoid()}.${fileExtension}`);
+  }
+
+  private isFileAllowed(mimetype: string): boolean {
+    return ALLOWED_IMAGE_MIME_TYPES.includes(mimetype);
   }
 }

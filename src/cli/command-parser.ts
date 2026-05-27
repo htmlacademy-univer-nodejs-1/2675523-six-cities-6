@@ -1,4 +1,6 @@
-type ParsedCommand = Record<string, string[]>
+const COMMAND_PREFIX = '--';
+
+type ParsedCommand = Record<string, string[]>;
 
 export class CommandParser {
   static parse(cliArguments: string[]): ParsedCommand {
@@ -6,7 +8,7 @@ export class CommandParser {
     let currentCommand = '';
 
     for (const argument of cliArguments) {
-      if (argument.startsWith('--')) {
+      if (argument.startsWith(COMMAND_PREFIX)) {
         parsedCommand[argument] = [];
         currentCommand = argument;
       } else if (currentCommand && argument) {

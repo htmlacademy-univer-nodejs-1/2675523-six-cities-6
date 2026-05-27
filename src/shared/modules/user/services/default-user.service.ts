@@ -14,10 +14,9 @@ export class DefaultUserService implements UserServiceInterface {
   ) {}
 
   public async create(dto: CreateUserDto, salt: string): Promise<DocumentType<UserEntity>> {
-    const user = new UserEntity({ ...dto, avatar: DEFAULT_AVATAR_FILE_NAME });
-    user.setPassword(dto.password, salt);
-
+    const user = this.createUserEntity(dto, salt);
     const result = await this.userModel.create(user);
+
     this.logger.info(`New user created: ${user.email}`);
 
     return result;
@@ -52,5 +51,12 @@ export class DefaultUserService implements UserServiceInterface {
     return this.userModel
       .findByIdAndUpdate(userId, dto, { new: true })
       .exec();
+  }
+
+  private createUserEntity(dto: CreateUserDto, salt: string): UserEntity {
+    const user = new UserEntity({ ...dto, avatar: DEFAULT_AVATAR_FILE_NAME });
+    user.setPassword(dto.password, salt);
+
+    return user;
   }
 }

@@ -1,13 +1,66 @@
 import {
+  AmenitiesType,
+  CityName,
   CoordinatesInterface,
   findAmenityType,
   findCityName,
   findHouseType,
   findUserType,
+  HouseType,
   OfferInterface, UserInterface
 } from '../models/index.js';
 
+type OfferDataFields = {
+  title: string;
+  description: string;
+  cityName: string;
+  previewImage: string;
+  photosRaw: string;
+  isPremiumRaw: string;
+  typeRaw: string;
+  roomsRaw: string;
+  guestsCountRaw: string;
+  priceRaw: string;
+  amenitiesRaw: string;
+  authorName: string;
+  authorEmail: string;
+  authorTypeRaw: string;
+  coordinatesRaw: string;
+};
+
 export function createOffer(offerData: string): OfferInterface {
+  const fields = parseOfferDataFields(offerData);
+  const houseType = parseHouseType(fields.typeRaw);
+  const city = parseCity(fields.cityName);
+  const userType = parseUserType(fields.authorTypeRaw);
+  const amenities = parseAmenities(fields.amenitiesRaw);
+  const coordinates = parseCoordinates(fields.coordinatesRaw);
+
+  const author: UserInterface = {
+    name: fields.authorName?.trim(),
+    email: fields.authorEmail?.trim(),
+    avatar: '',
+    type: userType,
+  };
+
+  return {
+    title: fields.title?.trim(),
+    description: fields.description?.trim(),
+    city,
+    previewImage: fields.previewImage?.trim(),
+    photos: fields.photosRaw?.split(';').map((photo) => photo.trim()),
+    isPremium: fields.isPremiumRaw?.trim().toLowerCase() === 'true',
+    type: houseType,
+    rooms: Number.parseInt(fields.roomsRaw, 10),
+    price: Number.parseInt(fields.priceRaw, 10),
+    amenities,
+    author,
+    guestsCount: parseInt(fields.guestsCountRaw, 10),
+    coordinates,
+  };
+}
+
+function parseOfferDataFields(offerData: string): OfferDataFields {
   const [
     title,
     description,
@@ -17,7 +70,7 @@ export function createOffer(offerData: string): OfferInterface {
     isPremiumRaw,
     typeRaw,
     roomsRaw,
-    guestsCount,
+    guestsCountRaw,
     priceRaw,
     amenitiesRaw,
     authorName,
@@ -26,22 +79,57 @@ export function createOffer(offerData: string): OfferInterface {
     coordinatesRaw
   ] = offerData.replace('\n', '').split('\t');
 
+  return {
+    title,
+    description,
+    cityName,
+    previewImage,
+    photosRaw,
+    isPremiumRaw,
+    typeRaw,
+    roomsRaw,
+    guestsCountRaw,
+    priceRaw,
+    amenitiesRaw,
+    authorName,
+    authorEmail,
+    authorTypeRaw,
+    coordinatesRaw
+  };
+}
+
+function parseHouseType(typeRaw: string): HouseType {
   const houseType = findHouseType(typeRaw?.trim());
-  if (!houseType) {
-    throw new Error(`Invalid HouseType: "${typeRaw}"`);
+
+  if (houseType) {
+    return houseType;
   }
 
+  throw new Error(`Invalid HouseType: "${typeRaw}"`);
+}
+
+function parseCity(cityName: string): CityName {
   const city = findCityName(cityName?.trim());
-  if (!city) {
-    throw new Error(`Invalid CityName: "${cityName}"`);
+
+  if (city) {
+    return city;
   }
 
+  throw new Error(`Invalid CityName: "${cityName}"`);
+}
+
+function parseUserType(authorTypeRaw: string): UserInterface['type'] {
   const userType = findUserType(authorTypeRaw?.trim());
-  if (!userType) {
-    throw new Error(`Invalid UserType: "${authorTypeRaw}"`);
+
+  if (userType) {
+    return userType;
   }
 
-  const amenities = amenitiesRaw
+  throw new Error(`Invalid UserType: "${authorTypeRaw}"`);
+}
+
+function parseAmenities(amenitiesRaw: string): AmenitiesType[] {
+  return amenitiesRaw
     ?.split(';')
     .map((amenity) => {
       const found = findAmenityType(amenity.trim());
@@ -50,34 +138,12 @@ export function createOffer(offerData: string): OfferInterface {
       }
       return found;
     });
+}
 
+function parseCoordinates(coordinatesRaw: string): CoordinatesInterface {
   const [latitude, longitude] = coordinatesRaw
     .split(',')
     .map((coord) => Number.parseFloat(coord));
 
-  const author: UserInterface = {
-    name: authorName?.trim(),
-    email: authorEmail?.trim(),
-    avatar: '',
-    type: userType,
-  };
-
-  return {
-    title: title?.trim(),
-    description: description?.trim(),
-    city,
-    previewImage: previewImage?.trim(),
-    photos: photosRaw?.split(';').map((photo) => photo.trim()),
-    isPremium: isPremiumRaw?.trim().toLowerCase() === 'true',
-    type: houseType,
-    rooms: Number.parseInt(roomsRaw, 10),
-    price: Number.parseInt(priceRaw, 10),
-    amenities,
-    author,
-    guestsCount: parseInt(guestsCount, 10),
-    coordinates: {
-      latitude,
-      longitude,
-    } satisfies CoordinatesInterface,
-  };
+  return { latitude, longitude };
 }

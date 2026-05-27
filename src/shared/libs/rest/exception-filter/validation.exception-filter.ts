@@ -10,9 +10,9 @@ import {ApplicationError} from '../models/index.js';
 @injectable()
 export class ValidationExceptionFilter implements ExceptionFilterInterface {
   constructor(
-    @inject(Component.Logger) private readonly _logger: LoggerInterface
+    @inject(Component.Logger) private readonly logger: LoggerInterface
   ) {
-    this._logger.info('ValidationExceptionFilter registered');
+    this.logger.info('ValidationExceptionFilter registered');
   }
 
   public catch(error: unknown, _req: Request, res: Response, next: NextFunction): void {
@@ -20,8 +20,8 @@ export class ValidationExceptionFilter implements ExceptionFilterInterface {
       return next(error);
     }
 
-    this._logger.error(`[ValidationException]: ${error.message}`, error);
-    error.details.forEach((errorField) => this._logger.debug(`[${errorField.property}] — ${errorField.messages}`));
+    this.logger.error(`[ValidationException]: ${error.message}`, error);
+    error.details.forEach((errorField) => this.logger.debug(`[${errorField.property}] — ${errorField.messages}`));
 
     res
       .status(error.httpStatusCode)

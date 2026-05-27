@@ -20,10 +20,10 @@ function isObject(value: unknown): value is Record<string, object> {
 @injectable()
 export class PathTransformer {
   constructor(
-    @inject(Component.Logger) private readonly _logger: LoggerInterface,
-    @inject(Component.Config) private readonly _config: ConfigInterface<RestSchema>
+    @inject(Component.Logger) private readonly logger: LoggerInterface,
+    @inject(Component.Config) private readonly config: ConfigInterface<RestSchema>
   ) {
-    this._logger.info('PathTransformer created');
+    this.logger.info('PathTransformer created');
   }
 
   public execute(data: Record<string, unknown>): Record<string, unknown> {
@@ -41,13 +41,7 @@ export class PathTransformer {
           }
 
           if (this.isStaticProperty(key) && typeof value === 'string') {
-            const rootPath = this.hasDefaultImage(value) ? STATIC_FILES_ROUTE : STATIC_UPLOAD_ROUTE;
-
-            const serverProtocol = this._config.get('SERVER_HOST_PROTOCOL');
-            const serverHost = this._config.get('HOST');
-            const serverPort = this._config.get('PORT');
-
-            current[key] = `${getFullServerPath(serverProtocol, serverHost, serverPort)}${rootPath}/${value}`;
+            current[key] = this.buildStaticResourcePath(value);
           }
         }
       }
@@ -62,5 +56,21 @@ export class PathTransformer {
 
   private isStaticProperty(property: string): boolean {
     return STATIC_RESOURCE_FIELDS.includes(property);
+  }
+
+  private buildStaticResourcePath(value: string): string {
+    return `${this.getServerPath()}${this.getResourceRoute(value)}/${value}`;
+  }
+
+  private getResourceRoute(value: string): string {
+    return this.hasDefaultImage(value) ? STATIC_FILES_ROUTE : STATIC_UPLOAD_ROUTE;
+  }
+
+  private getServerPath(): string {
+    return getFullServerPath(
+      this.config.get('SERVER_HOST_PROTOCOL'),
+      this.config.get('HOST'),
+      this.config.get('PORT')
+    );
   }
 }

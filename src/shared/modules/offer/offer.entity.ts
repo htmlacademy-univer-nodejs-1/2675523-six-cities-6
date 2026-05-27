@@ -9,6 +9,18 @@ import {
   HOUSE_TYPES,
   HouseType
 } from '../../models/index.js';
+import {
+  OFFER_DESCRIPTION_MAX_LENGTH,
+  OFFER_DESCRIPTION_MIN_LENGTH,
+  OFFER_GUESTS_MAX_COUNT,
+  OFFER_GUESTS_MIN_COUNT,
+  OFFER_PRICE_MAX,
+  OFFER_PRICE_MIN,
+  OFFER_ROOMS_MAX_COUNT,
+  OFFER_ROOMS_MIN_COUNT,
+  OFFER_TITLE_MAX_LENGTH,
+  OFFER_TITLE_MIN_LENGTH
+} from './constants/offer.constant.js';
 
 export interface OfferEntity extends defaultClasses.Base {}
 
@@ -22,16 +34,16 @@ export class OfferEntity extends defaultClasses.TimeStamps {
   @prop({
     required: true,
     trim: true,
-    minlength: 10,
-    maxlength: 100
+    minlength: OFFER_TITLE_MIN_LENGTH,
+    maxlength: OFFER_TITLE_MAX_LENGTH
   })
   public title!: string;
 
   @prop({
     required: true,
     trim: true,
-    minlength: 20,
-    maxlength: 1024
+    minlength: OFFER_DESCRIPTION_MIN_LENGTH,
+    maxlength: OFFER_DESCRIPTION_MAX_LENGTH
   })
   public description!: string;
 
@@ -69,22 +81,22 @@ export class OfferEntity extends defaultClasses.TimeStamps {
 
   @prop({
     required: true,
-    min: 1,
-    max: 8
+    min: OFFER_ROOMS_MIN_COUNT,
+    max: OFFER_ROOMS_MAX_COUNT
   })
   public roomsCount!: number;
 
   @prop({
     required: true,
-    min: 1,
-    max: 10
+    min: OFFER_GUESTS_MIN_COUNT,
+    max: OFFER_GUESTS_MAX_COUNT
   })
   public guestsCount!: number;
 
   @prop({
     required: true,
-    min: 100,
-    max: 100000
+    min: OFFER_PRICE_MIN,
+    max: OFFER_PRICE_MAX
   })
   public price!: number;
 

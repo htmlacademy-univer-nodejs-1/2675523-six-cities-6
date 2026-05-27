@@ -13,10 +13,7 @@ export class DefaultCommentService implements CommentServiceInterface {
   ) {}
 
   public async create(offerId: string, dto: CreateCommentDto): Promise<DocumentType<CommentEntity>> {
-    const comment = await this.commentModel.create({ ...dto, offerId });
-    await comment.populate('authorId');
-
-    return comment;
+    return this.createAndPopulateComment(offerId, dto);
   }
 
   public async findByOfferId(offerId: string): Promise<Array<DocumentType<CommentEntity>>> {
@@ -34,5 +31,15 @@ export class DefaultCommentService implements CommentServiceInterface {
       .exec();
 
     return result.deletedCount;
+  }
+
+  private async createAndPopulateComment(
+    offerId: string,
+    dto: CreateCommentDto
+  ): Promise<DocumentType<CommentEntity>> {
+    const comment = await this.commentModel.create({ ...dto, offerId });
+    await comment.populate('authorId');
+
+    return comment;
   }
 }

@@ -19,8 +19,8 @@ export class RestApplication {
   private readonly server: Express;
 
   constructor(
-    @inject(Component.Logger) private readonly _logger: LoggerInterface,
-    @inject(Component.Config) private readonly _config: ConfigInterface<RestSchema>,
+    @inject(Component.Logger) private readonly logger: LoggerInterface,
+    @inject(Component.Config) private readonly config: ConfigInterface<RestSchema>,
     @inject(Component.DatabaseClient) private readonly databaseClient: DatabaseClientInterface,
     @inject(Component.UserController) private readonly userController: ControllerInterface,
     @inject(Component.OfferController) private readonly offerController: ControllerInterface,
@@ -33,55 +33,51 @@ export class RestApplication {
   }
 
   public async init(): Promise<void> {
-    this._logger.info('REST application init');
+    this.logger.info('REST application init');
 
-    this._logger.info('Init database...');
+    this.logger.info('Init database...');
     await this.initDb();
-    this._logger.info('Database has been inited');
-    this._logger.info('Init app-level middleware...');
+    this.logger.info('Database has been inited');
+    this.logger.info('Init app-level middleware...');
     await this.initMiddleware();
-    this._logger.info('App-level middleware has been inited');
+    this.logger.info('App-level middleware has been inited');
 
-    this._logger.info('Init controllers...');
+    this.logger.info('Init controllers...');
     await this.initControllers();
-    this._logger.info('Controllers have been inited');
+    this.logger.info('Controllers have been inited');
 
-    this._logger.info('Init exception filters...');
+    this.logger.info('Init exception filters...');
     await this.initExceptionFilters();
-    this._logger.info('Exception filters have been inited');
+    this.logger.info('Exception filters have been inited');
 
-    this._logger.info('Init server...');
+    this.logger.info('Init server...');
     await this.initServer();
-    this._logger.info(`Server started on ${getFullServerPath(
-      this._config.get('SERVER_HOST_PROTOCOL'),
-      this._config.get('HOST'),
-      this._config.get('PORT')
-    )}`);
+    this.logger.info(`Server started on ${this.getServerPath()}`);
   }
 
   private async initDb(): Promise<void> {
     const mongoUri: string = getMongoURI(
-      this._config.get('DB_USER'),
-      this._config.get('DB_PASSWORD'),
-      this._config.get('DB_HOST'),
-      this._config.get('DB_PORT'),
-      this._config.get('DB_NAME')
+      this.config.get('DB_USER'),
+      this.config.get('DB_PASSWORD'),
+      this.config.get('DB_HOST'),
+      this.config.get('DB_PORT'),
+      this.config.get('DB_NAME')
     );
 
     return this.databaseClient.connect(mongoUri);
   }
 
   private async initMiddleware(): Promise<void> {
-    const authenticateMiddleware = new ParseTokenMiddleware(this._config.get('JWT_SECRET'));
+    const authenticateMiddleware = new ParseTokenMiddleware(this.config.get('JWT_SECRET'));
 
     this.server.use(express.json());
     this.server.use(
       STATIC_UPLOAD_ROUTE,
-      express.static(this._config.get('UPLOAD_DIRECTORY'))
+      express.static(this.config.get('UPLOAD_DIRECTORY'))
     );
     this.server.use(
       STATIC_FILES_ROUTE,
-      express.static(this._config.get('STATIC_DIRECTORY'))
+      express.static(this.config.get('STATIC_DIRECTORY'))
     );
 
     this.server.use(authenticateMiddleware.execute.bind(authenticateMiddleware));
@@ -101,7 +97,15 @@ export class RestApplication {
   }
 
   private async initServer(): Promise<void> {
-    const port = this._config.get('PORT');
+    const port = this.config.get('PORT');
     this.server.listen(port);
+  }
+
+  private getServerPath(): string {
+    return getFullServerPath(
+      this.config.get('SERVER_HOST_PROTOCOL'),
+      this.config.get('HOST'),
+      this.config.get('PORT')
+    );
   }
 }

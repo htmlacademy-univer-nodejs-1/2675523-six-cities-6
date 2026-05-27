@@ -5,6 +5,7 @@ import {
   DocumentOwnerMiddleware, HttpError, HttpMethod, HttpRequest, PathTransformer,
   PrivateRouteMiddleware,
   RequestQueryInterface,
+  RouteInterface,
   ValidateDtoMiddleware, ValidateObjectIdMiddleware,
   getRequestParam
 } from '../../libs/rest/index.js';
@@ -26,6 +27,12 @@ import {
 
 @injectable()
 export class OfferController extends BaseController {
+  private static parseOfferCountLimit(limit?: string): number | undefined {
+    return limit === undefined
+      ? undefined
+      : Number(limit);
+  }
+
   constructor(
     @inject(Component.Logger) protected readonly logger: LoggerInterface,
     @inject(Component.OfferService) private readonly offerService: OfferServiceInterface,
@@ -35,7 +42,11 @@ export class OfferController extends BaseController {
     super(logger, pathTransformer);
 
     this.logger.info('Registering routes for OfferController...');
-    this.addRoutes([
+    this.addRoutes(this.getRoutes());
+  }
+
+  private getRoutes(): RouteInterface[] {
+    return [
       { path: '/', method: HttpMethod.Get, handler: this.index },
       {
         path: '/',
@@ -59,10 +70,7 @@ export class OfferController extends BaseController {
         path: '/:offerId',
         method: HttpMethod.Get,
         handler: this.show,
-        middlewares: [
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getOfferExistsMiddlewares()
       },
       {
         path: '/:offerId',
@@ -80,41 +88,25 @@ export class OfferController extends BaseController {
         path: '/:offerId',
         method: HttpMethod.Delete,
         handler: this.delete,
-        middlewares: [
-          new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
-          new DocumentOwnerMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getOwnerProtectedOfferMiddlewares()
       },
       {
         path: '/:offerId/favorite',
         method: HttpMethod.Post,
         handler: this.makeFavorite,
-        middlewares: [
-          new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getPrivateOfferExistsMiddlewares()
       },
       {
         path: '/:offerId/favorite',
         method: HttpMethod.Delete,
         handler: this.removeFavorite,
-        middlewares: [
-          new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getPrivateOfferExistsMiddlewares()
       },
       {
         path: '/:offerId/comments',
         method: HttpMethod.Get,
         handler: this.indexComments,
-        middlewares: [
-          new ValidateObjectIdMiddleware('offerId'),
-          new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
-        ]
+        middlewares: this.getOfferExistsMiddlewares()
       },
       {
         path: '/:offerId/comments',
@@ -127,26 +119,38 @@ export class OfferController extends BaseController {
           new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
         ]
       }
-    ]);
+    ];
+  }
+
+  private getOfferExistsMiddlewares() {
+    return [
+      new ValidateObjectIdMiddleware('offerId'),
+      new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId')
+    ];
+  }
+
+  private getPrivateOfferExistsMiddlewares() {
+    return [
+      new PrivateRouteMiddleware(),
+      ...this.getOfferExistsMiddlewares()
+    ];
+  }
+
+  private getOwnerProtectedOfferMiddlewares() {
+    return [
+      ...this.getPrivateOfferExistsMiddlewares(),
+      new DocumentOwnerMiddleware(this.offerService, 'Offer', 'offerId')
+    ];
   }
 
   public async index(
     { query, tokenPayload }: Request<unknown, unknown, unknown, RequestQueryInterface>,
     res: Response
   ): Promise<void> {
-    const limit = query.limit === undefined
-      ? undefined
-      : Number(query.limit);
-
-    if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'Limit must be a positive integer',
-        'OfferController'
-      );
-    }
-
+    const limit = OfferController.parseOfferCountLimit(query.limit);
+    this.ensureValidOfferCountLimit(limit);
     const offers = await this.offerService.find(limit, tokenPayload?.id);
+
     this.ok(res, fillDTO(OfferPreviewRdo, offers));
   }
 
@@ -193,14 +197,7 @@ export class OfferController extends BaseController {
     res: Response
   ): Promise<void> {
     const city = getRequestParam(params, 'city');
-
-    if (!findCityName(city)) {
-      throw new HttpError(
-        StatusCodes.BAD_REQUEST,
-        'City must be in Paris | Cologne | Brussels | Amsterdam | Hamburg | Dusseldorf',
-        'OfferController'
-      );
-    }
+    this.ensureKnownCity(city);
 
     const premiumOffers = await this.offerService.findPremium(city, tokenPayload?.id);
     this.ok(res, fillDTO(OfferPreviewRdo, premiumOffers));
@@ -248,5 +245,29 @@ export class OfferController extends BaseController {
     const offerId = getRequestParam(params, 'offerId');
     const comment = await this.commentService.create(offerId, { ...body, authorId: tokenPayload.id });
     this.created(res, fillDTO(CommentRdo, comment));
+  }
+
+  private ensureValidOfferCountLimit(limit?: number): void {
+    if (limit === undefined || (Number.isInteger(limit) && limit > 0)) {
+      return;
+    }
+
+    throw new HttpError(
+      StatusCodes.BAD_REQUEST,
+      'Limit must be a positive integer',
+      'OfferController'
+    );
+  }
+
+  private ensureKnownCity(city: string): void {
+    if (findCityName(city)) {
+      return;
+    }
+
+    throw new HttpError(
+      StatusCodes.BAD_REQUEST,
+      'City must be in Paris | Cologne | Brussels | Amsterdam | Hamburg | Dusseldorf',
+      'OfferController'
+    );
   }
 }

@@ -21,10 +21,9 @@ export class GenerateCommand implements CommandInterface {
     try {
       await this.load(url);
       await this.write(filePath, offerCount);
-      console.info(chalk.green(`File ${filePath} was created`));
+      this.printSuccess(filePath);
     } catch (error: unknown) {
-      console.error(chalk.red('Can\'t generate data'));
-      console.error(chalk.red(getErrorMessage(error)));
+      this.printError(error);
     }
   }
 
@@ -43,5 +42,14 @@ export class GenerateCommand implements CommandInterface {
     for (let i = 0; i < offerCount; i++) {
       await tsvFileWriter.write(tsvOfferGenerator.generate());
     }
+  }
+
+  private printSuccess(filePath: string): void {
+    console.info(chalk.green(`File ${filePath} was created`));
+  }
+
+  private printError(error: unknown): void {
+    console.error(chalk.red('Can\'t generate data'));
+    console.error(chalk.red(getErrorMessage(error)));
   }
 }

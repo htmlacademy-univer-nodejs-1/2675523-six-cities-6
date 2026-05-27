@@ -13,10 +13,7 @@ export class CLIApplication {
 
   public registerCommands(commandList: CommandInterface[]): void {
     commandList.forEach((command) => {
-      if (Object.hasOwn(this.commands, command.getName())) {
-        throw new Error(`Command ${command.getName()} is already registered`);
-      }
-      this.commands[command.getName()] = command;
+      this.registerCommand(command);
     });
   }
 
@@ -38,5 +35,15 @@ export class CLIApplication {
     const commandArguments = parsedCommand[commandName] ?? [];
 
     await command.execute(...commandArguments);
+  }
+
+  private registerCommand(command: CommandInterface): void {
+    const commandName = command.getName();
+
+    if (Object.hasOwn(this.commands, commandName)) {
+      throw new Error(`Command ${commandName} is already registered`);
+    }
+
+    this.commands[commandName] = command;
   }
 }

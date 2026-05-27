@@ -17,40 +17,56 @@ import { TokenPayloadInterface } from '../models/token-payload.interface.js';
 @injectable()
 export class DefaultAuthService implements AuthServiceInterface {
   constructor(
-    @inject(Component.Logger) private readonly _logger: LoggerInterface,
-    @inject(Component.UserService) private readonly _userService: UserServiceInterface,
-    @inject(Component.Config) private readonly _config: ConfigInterface<RestSchema>
+    @inject(Component.Logger) private readonly logger: LoggerInterface,
+    @inject(Component.UserService) private readonly userService: UserServiceInterface,
+    @inject(Component.Config) private readonly config: ConfigInterface<RestSchema>
   ) {}
 
   public async authenticate(user: UserEntity): Promise<string> {
-    const jwtSecret = this._config.get('JWT_SECRET');
-    const secretKey = createSecretKey(jwtSecret, 'utf-8');
-    const tokenPayload: TokenPayloadInterface = {
+    this.logger.info(`Token created for ${user.email}`);
+
+    return new SignJWT(this.createTokenPayload(user))
+      .setProtectedHeader({ alg: JWT_ALGORITHM })
+      .setIssuedAt()
+      .setExpirationTime(JWT_EXPIRED)
+      .sign(this.createSecretKey());
+  }
+
+  public async verify(dto: LoginUserDto): Promise<UserEntity> {
+    const user = await this.userService.findByEmail(dto.email);
+    this.ensureUserExists(user, dto.email);
+    this.ensurePasswordCorrect(user, dto.password, dto.email);
+
+    return user;
+  }
+
+  private createTokenPayload(user: UserEntity): TokenPayloadInterface {
+    return {
       id: user.id,
       name: user.name,
       type: user.type
     };
-
-    this._logger.info(`Token created for ${user.email}`);
-    return new SignJWT(tokenPayload)
-      .setProtectedHeader({ alg: JWT_ALGORITHM })
-      .setIssuedAt()
-      .setExpirationTime(JWT_EXPIRED)
-      .sign(secretKey);
   }
 
-  public async verify(dto: LoginUserDto): Promise<UserEntity> {
-    const user = await this._userService.findByEmail(dto.email);
-    if (!user) {
-      this._logger.warn(`User with email: ${dto.email} not found`);
-      throw new UserNotFoundException();
+  private createSecretKey(): ReturnType<typeof createSecretKey> {
+    return createSecretKey(this.config.get('JWT_SECRET'), 'utf-8');
+  }
+
+  private ensureUserExists(user: UserEntity | null, email: string): asserts user is UserEntity {
+    if (user) {
+      return;
     }
 
-    if (!user.verifyPassword(dto.password, this._config.get('SALT'))) {
-      this._logger.warn(`Incorrect password for ${dto.email}`);
-      throw new UserPasswordIncorrectException();
+    this.logger.warn(`User with email: ${email} not found`);
+    throw new UserNotFoundException();
+  }
+
+  private ensurePasswordCorrect(user: UserEntity, password: string, email: string): void {
+    if (user.verifyPassword(password, this.config.get('SALT'))) {
+      return;
     }
 
-    return user;
+    this.logger.warn(`Incorrect password for ${email}`);
+    throw new UserPasswordIncorrectException();
   }
 }

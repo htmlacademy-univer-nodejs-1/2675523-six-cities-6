@@ -10,9 +10,9 @@ import {ApplicationError} from '../models/index.js';
 @injectable()
 export class HttpErrorExceptionFilter implements ExceptionFilterInterface {
   constructor(
-    @inject(Component.Logger) private readonly _logger: LoggerInterface
+    @inject(Component.Logger) private readonly logger: LoggerInterface
   ) {
-    this._logger.info('HttpErrorExceptionFilter registered');
+    this.logger.info('HttpErrorExceptionFilter registered');
   }
 
   public catch(error: unknown, req: Request, res: Response, next: NextFunction): void {
@@ -20,7 +20,7 @@ export class HttpErrorExceptionFilter implements ExceptionFilterInterface {
       return next(error);
     }
 
-    this._logger.error(`[HttpErrorException]: ${req.path} # ${error.message}`, error);
+    this.logger.error(`[HttpErrorException]: ${req.path} # ${error.message}`, error);
     res
       .status(error.httpStatusCode)
       .json(createErrorObject(ApplicationError.CommonError, error.message));
