@@ -7,7 +7,6 @@ Content-Type: application/json
 {
   "name": "Baboi",
   "email": "email@email.com",
-  "avatar": "string",
   "type": "default",
   "password": "123456"
 }

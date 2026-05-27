@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import {LoggerInterface} from '../../logger/models/index.js';
 import {ControllerInterface} from './models/controller.interface.js';
 import {RouteInterface} from '../models/index.js';
+import {PathTransformer} from '../transform/index.js';
 
 const DEFAULT_CONTENT_TYPE = 'application/json';
 
@@ -11,11 +12,11 @@ const DEFAULT_CONTENT_TYPE = 'application/json';
 export abstract class BaseController implements ControllerInterface {
   private readonly _router: Router;
 
-  protected constructor(protected readonly logger: LoggerInterface) {
+  protected constructor(protected readonly logger: LoggerInterface, protected readonly pathTransformer: PathTransformer) {
     this._router = Router();
   }
 
-  get router() {
+  public get router() {
     return this._router;
   }
 
@@ -32,10 +33,12 @@ export abstract class BaseController implements ControllerInterface {
   }
 
   public send<T>(res: Response, statusCode: number, data: T): void {
+    const modifiedData = this.pathTransformer.execute(data as Record<string, unknown>);
+
     res
       .type(DEFAULT_CONTENT_TYPE)
       .status(statusCode)
-      .json(data);
+      .json(modifiedData);
   }
 
   public ok<T>(res: Response, data: T): void {

@@ -7,7 +7,8 @@ import {LoggerInterface} from '../shared/libs/logger/models/index.js';
 import {Component} from '../shared/index.js';
 import {
   DefaultExceptionFilter,
-  ExceptionFilterInterface
+  ExceptionFilterInterface, HttpErrorExceptionFilter,
+  PathTransformer, ValidationExceptionFilter
 } from '../shared/libs/rest/index.js';
 
 export function createRestApplicationContainer(): ContainerModule {
@@ -28,8 +29,20 @@ export function createRestApplicationContainer(): ContainerModule {
       .to(MongoDatabaseClient)
       .inSingletonScope();
 
-    bind<ExceptionFilterInterface>(Component.ExceptionFilter)
+    bind<ExceptionFilterInterface>(Component.DefaultExceptionFilter)
       .to(DefaultExceptionFilter)
+      .inSingletonScope();
+
+    bind<ExceptionFilterInterface>(Component.ValidationExceptionFilter)
+      .to(ValidationExceptionFilter)
+      .inSingletonScope();
+
+    bind<ExceptionFilterInterface>(Component.HttpErrorExceptionFilter)
+      .to(HttpErrorExceptionFilter)
+      .inSingletonScope();
+
+    bind<PathTransformer>(Component.PathTransformer)
+      .to(PathTransformer)
       .inSingletonScope();
   });
 }

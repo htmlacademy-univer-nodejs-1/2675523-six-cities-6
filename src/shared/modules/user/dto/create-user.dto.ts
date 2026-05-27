@@ -2,9 +2,7 @@ import {USER_TYPES, UserType} from '../../../models/index.js';
 import {
   IsEmail,
   IsIn,
-  IsOptional,
   IsString,
-  IsUrl,
   Length
 } from 'class-validator';
 import {UserValidationMessage} from './user.messages.js';
@@ -16,10 +14,6 @@ export class CreateUserDto {
 
   @IsEmail({}, { message: UserValidationMessage.email.invalid })
   public email!: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: UserValidationMessage.avatar.invalid })
-  public avatar?: string;
 
   @IsIn(USER_TYPES, { message: UserValidationMessage.type.invalid })
   public type!: UserType;

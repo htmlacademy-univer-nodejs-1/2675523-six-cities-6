@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
+import dotenv from 'dotenv';
 import {
   CLIApplication,
   GenerateCommand,
@@ -8,7 +9,7 @@ import {
   VersionCommand
 } from './cli/index.js';
 
-function bootstrap() {
+async function bootstrap() {
   const cliApplication = new CLIApplication();
   cliApplication.registerCommands([
     new HelpCommand(),
@@ -17,7 +18,8 @@ function bootstrap() {
     new GenerateCommand()
   ]);
 
-  cliApplication.processCommand(process.argv);
+  await cliApplication.processCommand(process.argv);
 }
 
+dotenv.config();
 bootstrap();

@@ -1,13 +1,18 @@
 import {inject, injectable} from 'inversify';
-import {Component, getMongoURI} from '../shared/index.js';
+import {Component, getFullServerPath, getMongoURI} from '../shared/index.js';
 import {LoggerInterface} from '../shared/libs/logger/models/index.js';
 import {ConfigInterface, RestSchema} from '../shared/libs/config/index.js';
 import {DatabaseClientInterface} from '../shared/libs/database-client/index.js';
 import express, { Express } from 'express';
+import cors from 'cors';
 import {
   ControllerInterface,
-  ExceptionFilterInterface, ParseTokenMiddleware
+  ExceptionFilterInterface, ParseTokenMiddleware,
 } from '../shared/libs/rest/index.js';
+import {
+  STATIC_FILES_ROUTE,
+  STATIC_UPLOAD_ROUTE
+} from './consts/rest.constant.js';
 
 @injectable()
 export class RestApplication {
@@ -19,8 +24,10 @@ export class RestApplication {
     @inject(Component.DatabaseClient) private readonly databaseClient: DatabaseClientInterface,
     @inject(Component.UserController) private readonly userController: ControllerInterface,
     @inject(Component.OfferController) private readonly offerController: ControllerInterface,
-    @inject(Component.ExceptionFilter) private readonly appExceptionFilter: ExceptionFilterInterface,
+    @inject(Component.DefaultExceptionFilter) private readonly defaultExceptionFilter: ExceptionFilterInterface,
     @inject(Component.AuthExceptionFilter) private readonly authExceptionFilter: ExceptionFilterInterface,
+    @inject(Component.ValidationExceptionFilter) private readonly validationExceptionFilter: ExceptionFilterInterface,
+    @inject(Component.HttpErrorExceptionFilter) private readonly httpErrorExceptionFilter: ExceptionFilterInterface
   ) {
     this.server = express();
   }
@@ -45,7 +52,11 @@ export class RestApplication {
 
     this._logger.info('Init server...');
     await this.initServer();
-    this._logger.info(`Server started on http://localhost:${this._config.get('PORT')}`);
+    this._logger.info(`Server started on ${getFullServerPath(
+      this._config.get('SERVER_HOST_PROTOCOL'),
+      this._config.get('HOST'),
+      this._config.get('PORT')
+    )}`);
   }
 
   private async initDb(): Promise<void> {
@@ -65,11 +76,16 @@ export class RestApplication {
 
     this.server.use(express.json());
     this.server.use(
-      '/upload',
+      STATIC_UPLOAD_ROUTE,
       express.static(this._config.get('UPLOAD_DIRECTORY'))
+    );
+    this.server.use(
+      STATIC_FILES_ROUTE,
+      express.static(this._config.get('STATIC_DIRECTORY'))
     );
 
     this.server.use(authenticateMiddleware.execute.bind(authenticateMiddleware));
+    this.server.use(cors());
   }
 
   private async initControllers(): Promise<void> {
@@ -79,7 +95,9 @@ export class RestApplication {
 
   private async initExceptionFilters(): Promise<void> {
     this.server.use(this.authExceptionFilter.catch.bind(this.authExceptionFilter));
-    this.server.use(this.appExceptionFilter.catch.bind(this.appExceptionFilter));
+    this.server.use(this.validationExceptionFilter.catch.bind(this.validationExceptionFilter));
+    this.server.use(this.httpErrorExceptionFilter.catch.bind(this.httpErrorExceptionFilter));
+    this.server.use(this.defaultExceptionFilter.catch.bind(this.defaultExceptionFilter));
   }
 
   private async initServer(): Promise<void> {

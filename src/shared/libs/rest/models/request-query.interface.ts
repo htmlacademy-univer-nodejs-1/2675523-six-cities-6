@@ -1,3 +1,3 @@
 export interface RequestQueryInterface {
-  limit?: number;
+  limit?: string;
 }

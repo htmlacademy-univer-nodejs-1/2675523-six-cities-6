@@ -8,6 +8,6 @@ export const findUserType = (value: string): UserType | undefined =>
 export interface UserInterface {
   name: string;
   email: string;
-  avatar?: string;
+  avatar: string;
   type: UserType;
 }
