@@ -1,6 +1,8 @@
 .vscode/
 /node_modules/
+/frontend/node_modules/
 /build/
+/frontend/build/
 /lib/
 /dist/
 /docs/
