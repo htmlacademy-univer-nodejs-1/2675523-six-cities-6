@@ -24,6 +24,11 @@ import {UserServiceInterface} from './models/user-service.interface.js';
 import {LoggerUserRdo} from './rdo/index.js';
 import {AuthServiceInterface} from '../auth/index.js';
 
+const USER_ID_PARAM = 'userId';
+const USER_ENTITY_NAME = 'User';
+const USER_CONTROLLER_NAME = 'UserController';
+const AVATAR_FIELD_NAME = 'avatar';
+
 @injectable()
 export class UserController extends BaseController {
   constructor(
@@ -70,9 +75,9 @@ export class UserController extends BaseController {
         handler: this.uploadAvatar,
         middlewares: [
           new PrivateRouteMiddleware(),
-          new ValidateObjectIdMiddleware('userId'),
-          new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), 'avatar'),
-          new DocumentExistsMiddleware(this.userService, 'User', 'userId')
+          new ValidateObjectIdMiddleware(USER_ID_PARAM),
+          new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), AVATAR_FIELD_NAME),
+          new DocumentExistsMiddleware(this.userService, USER_ENTITY_NAME, USER_ID_PARAM)
         ]
       }
     ];
@@ -108,7 +113,7 @@ export class UserController extends BaseController {
   }
 
   public async uploadAvatar({ params, file, tokenPayload }: Request, res: Response): Promise<void> {
-    const userId = getRequestParam(params, 'userId');
+    const userId = getRequestParam(params, USER_ID_PARAM);
     this.ensureAvatarOwner(userId, tokenPayload?.id);
 
     const avatarFile = await this.saveAvatar(userId, file?.filename);
@@ -125,7 +130,7 @@ export class UserController extends BaseController {
     throw new HttpError(
       StatusCodes.CONFLICT,
       `User with email ${email} already exists`,
-      'UserController'
+      USER_CONTROLLER_NAME
     );
   }
 
@@ -141,7 +146,7 @@ export class UserController extends BaseController {
     throw new HttpError(
       StatusCodes.UNAUTHORIZED,
       'Unauthorized',
-      'UserController'
+      USER_CONTROLLER_NAME
     );
   }
 
@@ -153,7 +158,7 @@ export class UserController extends BaseController {
     throw new HttpError(
       StatusCodes.FORBIDDEN,
       'You can upload avatar only for your own account',
-      'UserController'
+      USER_CONTROLLER_NAME
     );
   }
 
